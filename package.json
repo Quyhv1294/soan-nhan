@@ -1,0 +1,38 @@
+{
+  "name": "soan-nhan",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "check:types": "tsc --noEmit",
+    "check:secrets": "node scripts/check-secrets.cjs",
+    "test:ux": "node --test tests/phieu.test.cjs tests/ban-soan.test.cjs",
+    "test:ux-browser": "node scripts/check-ux.cjs",
+    "test:theme": "node scripts/check-dark-theme.cjs --strict"
+  },
+  "dependencies": {
+    "@sparticuz/chromium": "153.0.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.3",
+    "docx": "^9.10.0",
+    "lucide-react": "^0.468.0",
+    "next": "15.5.27",
+    "puppeteer-core": "25.11.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.6.0"
+  }
+}

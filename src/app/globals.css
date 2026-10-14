@@ -1,0 +1,300 @@
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Tinos:ital,wght@0,400;0,700;1,400&family=Patrick+Hand&display=swap");
+@import "tailwindcss";
+
+/*
+  Hệ thống màu lấy từ lớp học Việt Nam:
+  - bang: xanh bảng đen (màu chính, nút, điều hướng)
+  - giay: giấy trắng ngà (nền)
+  - oly:  đường kẻ vở ô ly (lưới nền, viền phụ)
+  - muc:  mực đen xanh (chữ)
+  - phan: phấn vàng (đánh dấu, nhấn nhẹ)
+  - butdo: bút đỏ của cô (lề vở, cảnh báo, chỉ dùng rất ít)
+*/
+@theme {
+  --color-bang: #1e4b3a;
+  --color-bang-dam: #143428;
+  --color-bang-nhat: #e6efe9;
+  --color-tren-bang: #ffffff;
+  --color-nguy-hiem: #b83229;
+  --color-giay: #fafaf6;
+  --color-trang: #ffffff;
+  --color-oly: #d5e0ee;
+  --color-oly-dam: #a9bdd8;
+  --color-muc: #1d2433;
+  --color-muc-nhat: #5b6475;
+  --color-vien: #e3e3dc;
+  --color-vien-nhap: #e3e3dc;
+  --color-phan: #f3d36b;
+  --color-phan-nhat: #fbf1cc;
+  --color-butdo: #c2352b;
+
+  /* Màu riêng từng tính năng / lĩnh vực: lấy từ hộp bút sáp của lớp mẫu giáo */
+  --color-xanh: #2f6fb5;
+  --color-xanh-nhat: #e5eefa;
+  --color-cam: #d4682a;
+  --color-cam-nhat: #fcebdd;
+  --color-tim: #6a55c9;
+  --color-tim-nhat: #ece8fb;
+  --color-hong: #c8476e;
+  --color-hong-nhat: #fbe5ec;
+  --color-la: #3f8a3a;
+  --color-la-nhat: #e4f2e1;
+  --color-nghe: #b8860b;
+  --color-nghe-nhat: #fbf1cc;
+
+  --font-sans: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-van-ban: "Tinos", "Times New Roman", serif;
+  --font-tay: "Patrick Hand", "Be Vietnam Pro", cursive; /* chữ viết tay của cô, chỉ dùng cho ghi chú nhỏ */
+
+  --radius-o: 10px;
+  --radius-the: 16px;
+
+  --shadow-the: 0 1px 2px rgba(29, 36, 51, 0.04), 0 4px 16px -6px rgba(29, 36, 51, 0.1);
+  --shadow-noi: 0 2px 4px rgba(29, 36, 51, 0.05), 0 18px 40px -16px rgba(29, 36, 51, 0.28);
+}
+
+/* Mũi tên dùng chung cho ô chọn đơn, kể cả các select không dùng component UI. */
+select:not([multiple]):not([size]) {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%235b6475' stroke-width='1.5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 8px;
+  padding-inline-end: 2.25rem;
+}
+
+html {
+  color-scheme: light;
+}
+
+@media screen {
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --color-bang: #8bd3ad;
+    --color-bang-dam: #a2dfbf;
+    --color-bang-nhat: #223e30;
+    --color-tren-bang: #10251d;
+    --color-giay: #101a16;
+    --color-trang: #19251f;
+    --color-oly: #263b30;
+    --color-oly-dam: #344e40;
+    --color-muc: #e6eee9;
+    --color-muc-nhat: #abbdb2;
+    --color-vien: #34483d;
+    --color-vien-nhap: #657e6e;
+    --do-dam-gach-phan: 20%;
+    --color-phan-nhat: #3d341e;
+    --color-butdo: #ff9b91;
+    --color-xanh: #93bff3;
+    --color-xanh-nhat: #1c314a;
+    --color-cam: #f6b17d;
+    --color-cam-nhat: #442d20;
+    --color-tim: #c0b0fc;
+    --color-tim-nhat: #302849;
+    --color-hong: #f3a4bd;
+    --color-hong-nhat: #442633;
+    --color-la: #a1d697;
+    --color-la-nhat: #253b25;
+    --color-nghe: #f2d080;
+    --color-nghe-nhat: #3c341c;
+    --shadow-the: 0 1px 2px rgb(0 0 0 / 18%), 0 4px 16px -6px rgb(0 0 0 / 30%);
+    --shadow-noi: 0 2px 4px rgb(0 0 0 / 20%), 0 18px 40px -16px rgb(0 0 0 / 55%);
+  }
+  html[data-theme="dark"] select:not([multiple]):not([size]) {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23abbdb2' stroke-width='1.5'/></svg>");
+  }
+}
+
+/* Giữ màu thật của giấy, bảng phấn và phần trình chiếu khi đổi giao diện. */
+.trang-van-ban,
+.phieu-preview,
+.giay-co-dinh,
+.bang-phan {
+  color-scheme: light;
+  --color-bang: #1e4b3a;
+  --color-bang-dam: #143428;
+  --color-bang-nhat: #e6efe9;
+  --color-tren-bang: #ffffff;
+  --color-giay: #fafaf6;
+  --color-trang: #ffffff;
+  --color-oly: #d5e0ee;
+  --color-oly-dam: #a9bdd8;
+  --color-muc: #1d2433;
+  --color-muc-nhat: #5b6475;
+  --color-vien: #e3e3dc;
+  --color-vien-nhap: #e3e3dc;
+  --do-dam-gach-phan: 75%;
+  --color-phan-nhat: #fbf1cc;
+  --color-butdo: #c2352b;
+  --color-xanh: #2f6fb5;
+  --color-xanh-nhat: #e5eefa;
+  --color-cam: #d4682a;
+  --color-cam-nhat: #fcebdd;
+  --color-tim: #6a55c9;
+  --color-tim-nhat: #ece8fb;
+  --color-hong: #c8476e;
+  --color-hong-nhat: #fbe5ec;
+  --color-la: #3f8a3a;
+  --color-la-nhat: #e4f2e1;
+  --color-nghe: #b8860b;
+  --color-nghe-nhat: #fbf1cc;
+}
+
+.bg-phan {
+  --color-muc: #1d2433;
+  --color-muc-nhat: #5b6475;
+}
+
+.theme-sun { display: none; }
+.theme-moon { display: block; }
+html[data-theme="dark"] .theme-sun { display: block; }
+html[data-theme="dark"] .theme-moon { display: none; }
+
+body {
+  background: var(--color-giay);
+  color: var(--color-muc);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Giấy vở ô ly: ô nhỏ 8px, đường đậm mỗi 4 ô — chi tiết nhận diện của sản phẩm */
+.o-ly {
+  background-color: var(--color-trang);
+  background-image:
+    linear-gradient(var(--color-oly-dam) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-oly-dam) 1px, transparent 1px),
+    linear-gradient(var(--color-oly) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-oly) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px, 8px 8px, 8px 8px;
+}
+
+/* Lề đỏ bên trái như trang vở */
+.le-do {
+  position: relative;
+}
+.le-do::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 56px;
+  width: 1.5px;
+  background: var(--color-butdo);
+  opacity: 0.7;
+}
+
+/* Bảng phấn: nền xanh bảng có vệt phấn mờ — dùng cho dải nổi bật */
+.bang-phan {
+  background-color: var(--color-bang);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(255, 255, 255, 0.07), transparent 70%),
+    radial-gradient(ellipse 50% 50% at 85% 75%, rgba(255, 255, 255, 0.05), transparent 70%),
+    radial-gradient(ellipse 30% 20% at 60% 10%, rgba(243, 211, 107, 0.06), transparent 70%);
+}
+
+/* Gạch chân bằng phấn vàng dưới chữ cần nhấn */
+.gach-phan {
+  background-image: linear-gradient(transparent 62%, color-mix(in srgb, var(--color-phan) var(--do-dam-gach-phan, 75%), transparent) 62%, color-mix(in srgb, var(--color-phan) var(--do-dam-gach-phan, 75%), transparent) 90%, transparent 90%);
+  padding: 0 0.08em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Miếng băng dính dán giấy lên bảng */
+.bang-dinh {
+  position: absolute;
+  width: 92px;
+  height: 26px;
+  background: color-mix(in srgb, var(--color-phan) 55%, white);
+  opacity: 0.85;
+  box-shadow: 0 1px 2px rgba(29, 36, 51, 0.12);
+}
+
+/* Trang văn bản xem trước (giáo án, KHBD) — giống bản in Word */
+.trang-van-ban {
+  font-family: var(--font-van-ban);
+  font-size: 15px;
+  line-height: 1.55;
+  background: var(--color-trang);
+  color: var(--color-muc);
+}
+.trang-van-ban table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.trang-van-ban th,
+.trang-van-ban td {
+  border: 1px solid var(--color-muc);
+  padding: 6px 8px;
+  vertical-align: top;
+  text-align: left;
+}
+.trang-van-ban th {
+  font-weight: 700;
+  text-align: center;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-bang);
+  outline-offset: 2px;
+}
+
+/* Vùng soạn bài giữ bề mặt phẳng để đọc và chỉnh nội dung trong thời gian dài. */
+.vung-soan .shadow-the {
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@page phieu {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  html {
+    color-scheme: light !important;
+  }
+  .soan-layout {
+    display: block;
+    padding-bottom: 0;
+  }
+  .soan-output {
+    display: block !important;
+  }
+  .phieu-output {
+    display: block !important;
+  }
+  .khong-in {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  .phieu-preview {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    break-inside: avoid;
+    max-width: 186mm;
+    margin: auto;
+  }
+  body:has(.phieu-preview) main {
+    page: phieu;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+  body:has(.phieu-preview) main > header {
+    display: none;
+  }
+  .phieu-editor {
+    display: block;
+    padding-bottom: 0;
+  }
+}
