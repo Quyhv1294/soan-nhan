@@ -10,7 +10,6 @@ import type { ReactNode } from "react";
 import { APP_NAV, SITE } from "@/lib/site";
 import { TINH_NANG } from "./TinhNang";
 import { Logo } from "./ui";
-import { ThemeToggle } from "./ThemeToggle";
 
 const NHOM: { key: "chung" | "mam-non" | "tieu-hoc"; label: string }[] = [
   { key: "mam-non", label: "Mầm non" },
@@ -41,33 +40,34 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="khong-in hidden lg:block border-r border-vien bg-trang">
         <aside className="flex flex-col sticky top-0 h-dvh">
           <div className="px-5 h-16 flex items-center">
-            <Link href="/tong-quan">
+            <Link href="/tong-quan" className="inline-flex min-h-11 items-center">
               <Logo />
             </Link>
           </div>
           <nav className="flex-1 overflow-y-auto px-3 pb-4" aria-label="Điều hướng chính">
             <NavLink href="/tong-quan" label="Tổng quan" active={isActive("/tong-quan")} />
-            {[...NHOM].sort((a, b) => Number(b.key === profile.capHoc) - Number(a.key === profile.capHoc)).map((g) => (
+            {/* Chỉ hiện công cụ của cấp học cô đang dạy + công cụ dùng chung, để menu ngắn gọn. */}
+            {NHOM.filter((g) => g.key === profile.capHoc || g.key === "chung").map((g) => (
               <div key={g.key} className="mt-5">
-                <p className="px-3 mb-1.5 text-[12px] font-semibold uppercase tracking-wider text-muc-nhat/80">{g.label}</p>
+                <p className="px-3 mb-1.5 text-[13px] font-semibold uppercase tracking-wider text-muc-nhat/80">{g.label}</p>
                 {APP_NAV.filter((n) => n.level === g.key && n.href !== "/tong-quan").map((n) => (
                   <NavLink key={n.href} href={n.href} label={n.label} active={isActive(n.href)} />
                 ))}
               </div>
             ))}
+            <p className="mt-5 px-3 text-[13px] leading-snug text-muc-nhat">Đang hiện công cụ cho {profile.capHoc === "tieu-hoc" ? "Tiểu học" : "Mầm non"}. <Link href="/tai-khoan" className="font-semibold text-bang underline">Đổi cấp học</Link></p>
           </nav>
           <div className="m-3 rounded-the bg-giay border border-vien p-3">
-            <div className="mb-3"><ThemeToggle /></div>
             <Link href="/tai-khoan" className="flex items-center gap-3 group">
                 <span className="h-9 w-9 rounded-full bg-phan text-muc font-bold grid place-items-center text-sm" aria-hidden="true">
                 {name.slice(0, 1).toLocaleUpperCase("vi")}
               </span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-muc group-hover:text-bang">{name}</span>
-                <span className="block text-[12px] text-muc-nhat truncate">{className}</span>
+                <span className="block text-[13px] text-muc-nhat truncate">{className}</span>
               </span>
             </Link>
-            <div className="mt-3 flex items-baseline justify-between text-[12px] text-muc-nhat">
+            <div className="mt-3 flex items-baseline justify-between text-[13px] text-muc-nhat">
               <span>Lượt soạn tháng này</span>
               <span className="font-semibold text-muc tabular-nums">
                 {used}/{SITE.freeQuota}
@@ -82,12 +82,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Đầu trang trên điện thoại */}
       <div className="khong-in lg:hidden sticky top-0 z-10 h-14 px-4 flex items-center justify-between bg-trang/90 backdrop-blur border-b border-vien">
-        <Link href="/tong-quan">
+        <Link href="/tong-quan" className="inline-flex min-h-11 items-center">
           <Logo />
         </Link>
-        <div className="flex items-center gap-2"><span className="text-[12px] font-semibold px-2.5 py-1 rounded-full bg-phan-nhat text-muc tabular-nums">
+        <div className="flex items-center gap-2"><span className="text-[13px] font-semibold px-2.5 py-1 rounded-full bg-phan-nhat text-muc tabular-nums">
           Còn {Math.max(0, SITE.freeQuota - used)} lượt
-        </span><ThemeToggle compact /></div>
+        </span></div>
       </div>
 
       <main className={`px-4 sm:px-8 py-6 sm:py-10 pb-28 lg:pb-10 max-w-6xl w-full ${authoring ? "vung-soan" : ""}`}>{children}</main>
@@ -105,7 +105,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={n.href}
               href={n.href}
               aria-current={on ? "page" : undefined}
-              className={`h-16 flex flex-col items-center justify-center gap-1 text-[11.5px] font-medium ${on ? "text-bang" : "text-muc-nhat"}`}
+              className={`h-16 flex flex-col items-center justify-center gap-1 text-[13px] font-medium ${on ? "text-bang" : "text-muc-nhat"}`}
             >
               <span className={`h-7 w-12 rounded-full grid place-items-center ${on ? "bg-bang-nhat" : ""}`}>
                 <Icon size={19} strokeWidth={on ? 2.3 : 1.9} aria-hidden="true" />
@@ -114,9 +114,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           );
         })}
-        <button type="button" onClick={() => setToolsOpen(true)} aria-haspopup="dialog" aria-expanded={toolsOpen} className="flex h-16 flex-col items-center justify-center gap-1 text-[11.5px] font-medium text-muc-nhat"><span className="grid h-7 w-12 place-items-center"><Grid2X2 size={19} aria-hidden="true" /></span>Công cụ</button>
+        <button type="button" onClick={() => setToolsOpen(true)} aria-haspopup="dialog" aria-expanded={toolsOpen} className="flex h-16 flex-col items-center justify-center gap-1 text-[13px] font-medium text-muc-nhat"><span className="grid h-7 w-12 place-items-center"><Grid2X2 size={19} aria-hidden="true" /></span>Công cụ</button>
       </nav>
-      {toolsOpen && <Modal title="Công cụ của lớp" onClose={() => setToolsOpen(false)}><nav className="space-y-2 p-4" aria-label="Tất cả công cụ">{APP_NAV.filter((n) => n.href !== "/tong-quan").map((n) => <div key={n.href} onClick={() => setToolsOpen(false)}><NavLink href={n.href} label={n.label} active={isActive(n.href)} /></div>)}<div onClick={() => setToolsOpen(false)}><NavLink href="/tai-khoan" label="Tài khoản và hồ sơ lớp" active={isActive("/tai-khoan")} /></div></nav></Modal>}
+      {toolsOpen && <Modal title="Công cụ của lớp" onClose={() => setToolsOpen(false)}><nav className="space-y-2 p-4" aria-label="Tất cả công cụ">{APP_NAV.filter((n) => n.href !== "/tong-quan" && (n.level === "chung" || n.level === profile.capHoc)).map((n) => <div key={n.href} onClick={() => setToolsOpen(false)}><NavLink href={n.href} label={n.label} active={isActive(n.href)} /></div>)}<div onClick={() => setToolsOpen(false)}><NavLink href="/tai-khoan" label="Tài khoản và hồ sơ lớp" active={isActive("/tai-khoan")} /></div></nav></Modal>}
     </div>
   );
 }

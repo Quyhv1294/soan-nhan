@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useXacNhan } from "@/components/XacNhan";
 import { ArrowDown, ArrowUp, CalendarDays, Plus, Save, Trash2 } from "lucide-react";
 import { Button, ButtonLink, Field, Input, PageHeader, Textarea } from "@/components/ui";
 import { Modal } from "@/components/Modal";
@@ -38,10 +39,13 @@ function ChonLich({ thang, value, onChange }: { thang: string; value: LichHoc; o
     onChange({ ...next, ngayHoc: value.ngayHoc.filter((d) => d >= next.tuNgay && d <= next.denNgay) });
   }
   return <div className="space-y-4">
-    <div className="grid gap-4 sm:grid-cols-2">
+    <details open={!days.length} className="rounded-o border border-vien bg-trang">
+      <summary className="flex min-h-11 cursor-pointer flex-wrap items-center gap-x-2 px-3 py-2 text-sm"><span className="font-semibold">Khoảng ngày: {value.tuNgay && value.denNgay ? `${value.tuNgay.slice(8, 10)}/${value.tuNgay.slice(5, 7)} – ${value.denNgay.slice(8, 10)}/${value.denNgay.slice(5, 7)}` : "chưa hợp lệ"}</span><span className="text-muc-nhat">· cả tháng. Bấm để sửa nếu lớp chỉ học một phần tháng.</span></summary>
+    <div className="grid gap-4 border-t border-vien p-3 sm:grid-cols-2">
       <Field label="Từ ngày"><Input type="date" required min={bounds?.tuNgay} max={bounds?.denNgay} value={value.tuNgay} onChange={(e) => range("tuNgay", e.target.value)} /></Field>
       <Field label="Đến ngày"><Input type="date" required min={bounds?.tuNgay} max={bounds?.denNgay} value={value.denNgay} onChange={(e) => range("denNgay", e.target.value)} /></Field>
     </div>
+    </details>
     {!days.length ? <p role="alert" className="text-sm text-butdo">Cô nhập khoảng ngày hợp lệ trong tháng đã chọn nhé.</p> : <fieldset>
       <legend className="font-semibold">Ngày học <span className="font-normal text-muc-nhat">· {value.ngayHoc.length} ngày đã chọn</span></legend>
       <p className="mt-1 text-sm text-muc-nhat">Bỏ chọn ngày nghỉ; có thể chọn Thứ Bảy, Chủ nhật nếu lớp có học.</p>
@@ -65,6 +69,10 @@ function TaoThang({ onCreate }: { onCreate: (p: KeHoachThang) => void }) {
     const bounds = khoangThang(current);
     setThang(current); setLich({ ...bounds, ngayHoc: ngayTrongTuan(cacNgayTrongKhoang(bounds.tuNgay, bounds.denNgay)) });
   }, []);
+  function doiThang(v: string) {
+    setThang(v);
+    try { const bounds = khoangThang(v); setLich({ ...bounds, ngayHoc: ngayTrongTuan(cacNgayTrongKhoang(bounds.tuNgay, bounds.denNgay)) }); } catch { setLich({ tuNgay: "", denNgay: "", ngayHoc: [] }); }
+  }
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); setError("");
     const data = new FormData(e.currentTarget);
@@ -74,7 +82,10 @@ function TaoThang({ onCreate }: { onCreate: (p: KeHoachThang) => void }) {
   return <form onSubmit={submit} className="max-w-4xl space-y-5 rounded-the border border-vien bg-trang p-4 sm:p-6">
     <h2 className="text-xl font-bold">Tạo kế hoạch tháng</h2>
     <div className="grid gap-4 sm:grid-cols-2">
-      <Field label="Tháng, năm"><Input type="month" value={thang} required min="1900-01" max="9999-12" onChange={(e) => { const v = e.target.value; setThang(v); try { const bounds = khoangThang(v); setLich({ ...bounds, ngayHoc: ngayTrongTuan(cacNgayTrongKhoang(bounds.tuNgay, bounds.denNgay)) }); } catch { setLich({ tuNgay: "", denNgay: "", ngayHoc: [] }); } }} /></Field>
+      <Field label="Tháng, năm"><div className="grid grid-cols-2 gap-2">
+        <select aria-label="Tháng" className={SELECT} value={thang.slice(5, 7)} onChange={(e) => doiThang(`${thang.slice(0, 4)}-${e.target.value}`)}>{Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0")).map((m) => <option key={m} value={m}>Tháng {Number(m)}</option>)}</select>
+        <select aria-label="Năm" className={SELECT} value={thang.slice(0, 4)} onChange={(e) => doiThang(`${e.target.value}-${thang.slice(5, 7)}`)}>{Array.from({ length: 4 }, (_, i) => String(new Date().getFullYear() - 1 + i)).map((y) => <option key={y} value={y}>Năm {y}</option>)}</select>
+      </div></Field>
       <Field label="Độ tuổi"><select key={daNap ? profile.doTuoi : "loading"} name="doTuoi" disabled={!daNap} className={SELECT} defaultValue={Object.entries(DO_TUOI_LABEL).find(([id, label]) => id === profile.doTuoi || label === profile.doTuoi)?.[0] ?? "5-6"}>{Object.entries(DO_TUOI_LABEL).map(([id, ten]) => <option key={id} value={id}>{ten}</option>)}</select></Field>
     </div>
     <Field label="Chủ đề tháng"><Input name="chuDe" required maxLength={200} placeholder="Ví dụ: Bản thân" /></Field>
@@ -82,15 +93,16 @@ function TaoThang({ onCreate }: { onCreate: (p: KeHoachThang) => void }) {
     <Field label="Giáo viên chủ nhiệm (không bắt buộc)" hint="Mỗi giáo viên một dòng."><Textarea name="giaoVien" rows={2} maxLength={2000} /></Field>
     <ChonLich thang={thang} value={lich} onChange={setLich} />
     {error && <p role="alert" className="text-butdo">{error}</p>}
-    <Button type="submit" disabled={!daNap || !thang || !lich.ngayHoc.length}><Plus size={18} aria-hidden="true" />Tạo khung kế hoạch</Button>
+    <Button type="submit" disabled={!daNap || !thang || !lich.ngayHoc.length}><Plus size={18} aria-hidden="true" />Tạo kế hoạch tháng</Button>
   </form>;
 }
 
 const TEN_CAP = { thang: "tháng", tuan: "tuần", ngay: "ngày" };
 function NhomEditor({ value, cap, onChange, bo, onSoan, onGan, onBo, mo }: { value: NoiDungNhom; cap: ViTri["cap"]; onChange: (v: NoiDungNhom) => void; bo?: BoMucTieu; onSoan: () => void; onGan: () => void; onBo: () => void; mo: boolean }) {
   const name = NHOM_HOAT_DONG.find((n) => n.id === value.nhom)!.ten;
-  function status(next: NoiDungNhom["trangThai"]) {
-    if (value.phan.length && next !== "co-noi-dung" && !window.confirm("Nội dung riêng trong nhóm này sẽ được bỏ. Cô tiếp tục nhé?")) return;
+  const { xacNhan, hopThoai } = useXacNhan();
+  async function status(next: NoiDungNhom["trangThai"]) {
+    if (value.phan.length && next !== "co-noi-dung" && !(await xacNhan("Nội dung riêng trong nhóm này sẽ được bỏ. Cô tiếp tục nhé?"))) return;
     const { mucTieuIds: _mt, tietHoc: _tiet, giaoAnId: _ga, ...rest } = value;
     onChange({ ...(next === "co-noi-dung" ? value : rest), trangThai: next, phan: next === "co-noi-dung" ? value.phan.length ? value.phan : [{ id: crypto.randomUUID(), tieuDe: "", noiDung: "" }] : [] });
   }
@@ -104,6 +116,7 @@ function NhomEditor({ value, cap, onChange, bo, onSoan, onGan, onBo, mo }: { val
   return <details open={mo} id={`o-${value.id}`} className="scroll-mt-40 rounded-o border border-vien bg-trang">
     <summary className="cursor-pointer rounded-o p-4 font-semibold focus-visible:outline-bang">{name}<span className="ml-2 text-sm font-normal text-muc-nhat">{value.trangThai === "co-noi-dung" ? `${value.phan.length} phần · ${value.mucTieuIds?.length || "Chưa gắn"} MT${value.giaoAnId ? " · Có giáo án" : ""}` : value.trangThai === "khong-ap-dung" ? "Không áp dụng" : cap === "thang" ? "Chưa nhập" : "Dùng nội dung chung nếu có"}</span></summary>
     <div className="space-y-4 border-t border-vien p-4">
+      {hopThoai}
       <Field label={`Nội dung ${name.toLocaleLowerCase("vi")} của ${TEN_CAP[cap]}`}>
         <select className={SELECT} value={value.trangThai} onChange={(e) => status(e.target.value as NoiDungNhom["trangThai"])}>
           <option value="chua-nhap">{cap === "thang" ? "Chưa nhập" : "Dùng nội dung chung nếu có"}</option><option value="co-noi-dung">Nhập nội dung riêng</option><option value="khong-ap-dung">Không áp dụng</option>
@@ -128,7 +141,7 @@ function NhomEditor({ value, cap, onChange, bo, onSoan, onGan, onBo, mo }: { val
           <Field label="Tên phần (không bắt buộc)"><Input value={p.tieuDe} maxLength={200} placeholder="Ví dụ: Góc trọng tâm, chuẩn bị, VĐCB, TCVĐ…" onChange={(e) => part(p.id, { tieuDe: e.target.value })} /></Field>
           <Field label={p.tieuDe ? `Nội dung ${p.tieuDe}` : "Nội dung"}><Textarea rows={4} value={p.noiDung} maxLength={20_000} onChange={(e) => part(p.id, { noiDung: e.target.value })} /></Field>
           {p.giaoAnId && <ButtonLink href={hrefXemGiaoAn(p.giaoAnId)} variant="nhe">Mở giáo án của phần</ButtonLink>}
-          <div className="flex flex-wrap gap-1"><Button type="button" variant="nhe" disabled={index === 0} aria-label={`Đưa phần ${index + 1} lên`} onClick={() => move(index, -1)}><ArrowUp size={16} aria-hidden="true" /></Button><Button type="button" variant="nhe" disabled={index === value.phan.length - 1} aria-label={`Đưa phần ${index + 1} xuống`} onClick={() => move(index, 1)}><ArrowDown size={16} aria-hidden="true" /></Button><Button type="button" variant="nhe" onClick={() => { if (p.noiDung.trim() && !window.confirm("Bỏ phần nội dung này?")) return; const phan = value.phan.filter((x) => x.id !== p.id); const { mucTieuIds: _mt, tietHoc: _tiet, giaoAnId: _ga, ...rest } = value; onChange(phan.length ? { ...value, phan } : { ...rest, phan, trangThai: "chua-nhap" }); }}><Trash2 size={16} aria-hidden="true" />Bỏ phần</Button></div>
+          <div className="flex flex-wrap gap-1"><Button type="button" variant="nhe" disabled={index === 0} aria-label={`Đưa phần ${index + 1} lên`} onClick={() => move(index, -1)}><ArrowUp size={16} aria-hidden="true" /></Button><Button type="button" variant="nhe" disabled={index === value.phan.length - 1} aria-label={`Đưa phần ${index + 1} xuống`} onClick={() => move(index, 1)}><ArrowDown size={16} aria-hidden="true" /></Button><Button type="button" variant="nhe" onClick={async () => { if (p.noiDung.trim() && !(await xacNhan("Bỏ phần nội dung này?", { nutDongY: "Bỏ phần" }))) return; const phan = value.phan.filter((x) => x.id !== p.id); const { mucTieuIds: _mt, tietHoc: _tiet, giaoAnId: _ga, ...rest } = value; onChange(phan.length ? { ...value, phan } : { ...rest, phan, trangThai: "chua-nhap" }); }}><Trash2 size={16} aria-hidden="true" />Bỏ phần</Button></div>
         </fieldset>)}
         <Button type="button" variant="phu" disabled={value.phan.length >= 50} onClick={() => onChange({ ...value, phan: [...value.phan, { id: crypto.randomUUID(), tieuDe: "", noiDung: "" }] })}><Plus size={16} aria-hidden="true" />Thêm phần nội dung</Button>
         <div className="space-y-3 border-t border-vien pt-4">
@@ -161,6 +174,7 @@ function NoiDungApDung({ plan, week, day, onEdit, onLesson }: { plan: KeHoachTha
 
 export function KeHoachThangView({ documentId, nhomId }: { documentId?: string; nhomId?: string }) {
   const router = useRouter();
+  const { xacNhan, hopThoai } = useXacNhan();
   const [plan, setPlan] = useState<KeHoachThang | null>(null);
   const [loading, setLoading] = useState(Boolean(documentId));
   const [loadError, setLoadError] = useState("");
@@ -253,12 +267,12 @@ export function KeHoachThangView({ documentId, nhomId }: { documentId?: string; 
     const update = (groups: NoiDungNhom[]) => groups.map((g) => g.id === group.id ? group : g);
     change(viTri.cap === "thang" ? { ...plan, nhom: update(plan.nhom) } : { ...plan, tuan: plan.tuan.map((w) => w.id !== viTri.tuanId ? w : viTri.cap === "tuan" ? { ...w, nhom: update(w.nhom) } : { ...w, ngay: w.ngay.map((d) => d.id !== viTri.ngayId ? d : { ...d, nhom: update(d.nhom) }) }) });
   }
-  function applyCalendar() {
+  async function applyCalendar() {
     if (!plan || !lich) return;
     try {
       const next = doiLichHoc(plan, lich);
       const removed = plan.tuan.flatMap((w) => w.ngay).filter((d) => !lich.ngayHoc.includes(d.ngay));
-      if (removed.length && !window.confirm(`Lịch mới bỏ ${removed.length} ngày học. Nội dung riêng của các ngày bị bỏ và khối chung của tuần không còn ngày học sẽ bị xóa khỏi bản đang sửa. Cô tiếp tục nhé?`)) return;
+      if (removed.length && !(await xacNhan(`Lịch mới bỏ ${removed.length} ngày học. Nội dung riêng của các ngày bị bỏ và khối chung của tuần không còn ngày học sẽ bị xóa khỏi bản đang sửa. Cô tiếp tục nhé?`))) return;
       change(next); setViTri({ cap: "thang" }); setLich(null);
     } catch (e) { setError(loi(e)); }
   }
@@ -275,7 +289,8 @@ export function KeHoachThangView({ documentId, nhomId }: { documentId?: string; 
   }
 
   return <>
-    <PageHeader title="Kế hoạch tháng" tinhNang="/ke-hoach-thang" lead="Bảy nhóm hoạt động, nội dung chung và ngày học cụ thể của lớp." actions={<><ButtonLink href="/thu-vien?loai=ke-hoach-thang" variant="phu">Thư viện tháng</ButtonLink>{plan && <Button type="button" variant="phu" disabled={busy} onClick={() => { if (dirty && !window.confirm("Kế hoạch còn thay đổi chưa lưu. Cô muốn bỏ thay đổi và tạo tháng mới?")) return; setPlan(null); setDirty(false); setViTri({ cap: "thang" }); setError(""); setMessage(""); window.history.replaceState(null, "", "/ke-hoach-thang"); }}>Tạo tháng mới</Button>}</>} />
+    {hopThoai}
+    <PageHeader title="Kế hoạch tháng" tinhNang="/ke-hoach-thang" lead="Bảy nhóm hoạt động, nội dung chung và ngày học cụ thể của lớp." actions={<><ButtonLink href="/thu-vien?loai=ke-hoach-thang" variant="phu">Thư viện tháng</ButtonLink>{plan && <Button type="button" variant="phu" disabled={busy} onClick={async () => { if (dirty && !(await xacNhan("Kế hoạch còn thay đổi chưa lưu. Cô muốn bỏ thay đổi và tạo tháng mới?", { nutDongY: "Bỏ và tạo mới" }))) return; setPlan(null); setDirty(false); setViTri({ cap: "thang" }); setError(""); setMessage(""); window.history.replaceState(null, "", "/ke-hoach-thang"); }}>Tạo tháng mới</Button>}</>} />
     {loading ? <p role="status">Đang tải kế hoạch tháng…</p> : loadError ? <div role="alert" className="space-y-3 rounded-the border border-vien bg-trang p-6"><p>{loadError}</p><Button type="button" onClick={() => setRetry((n) => n + 1)}>Thử tải lại</Button></div> : !plan ? <TaoThang onCreate={(p) => { change(p); setViTri({ cap: "thang" }); setView("edit"); }} /> : <>
       <div className="sticky top-14 z-10 mb-5 flex flex-wrap items-center justify-between gap-3 rounded-o border border-vien bg-giay p-3 lg:top-0">
         <p role="status" className="text-sm text-muc-nhat">{busy ? "Đang lưu…" : dirty ? "Có thay đổi chưa lưu" : message || "Đã mở bản lưu"}</p>

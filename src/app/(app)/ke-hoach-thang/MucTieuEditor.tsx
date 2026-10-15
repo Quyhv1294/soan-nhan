@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, Field, Input, Textarea } from "@/components/ui";
+import { useXacNhan } from "@/components/XacNhan";
 import { cacONoiDung, docKeHoachThang } from "@/lib/ke-hoach-thang";
 import { nhanMucTieu, taoBoMucTieuThang10 } from "@/lib/muc-tieu";
 import { DO_TUOI_LABEL, LINH_VUC, type BoMucTieu, type KeHoachThang, type NoiDungNhom } from "@/lib/types";
@@ -12,14 +13,15 @@ import { demoAllowed } from "@/lib/supabase/configured";
 
 const SELECT = "min-h-11 w-full rounded-o border border-vien-nhap bg-trang px-3 text-base focus:outline-bang";
 export function BoMucTieuEditor({ plan, onChange }: { plan: KeHoachThang; onChange: (p: KeHoachThang) => void }) {
+  const { xacNhan, hopThoai } = useXacNhan();
   const [query, setQuery] = useState("");
   const [reuse, setReuse] = useState(false);
   const b = plan.boMucTieu;
   function update(next: BoMucTieu) { onChange({ ...plan, boMucTieu: next }); }
   const cells = cacONoiDung(plan);
   const used = (id: string) => cells.filter((o) => o.nhom.mucTieuIds?.includes(id)).length;
-  function remove() {
-    if (!window.confirm("Gỡ bộ mục tiêu và toàn bộ lựa chọn MT trong kế hoạch này? Nội dung hoạt động và giáo án đã lưu được giữ nguyên.")) return;
+  async function remove() {
+    if (!(await xacNhan("Gỡ bộ mục tiêu và toàn bộ lựa chọn MT trong kế hoạch này? Nội dung hoạt động và giáo án đã lưu được giữ nguyên.", { nutDongY: "Gỡ bộ mục tiêu" }))) return;
     const groups = (items: NoiDungNhom[]) => items.map(({ mucTieuIds: _old, ...g }) => g);
     const { boMucTieu: _old, ...rest } = plan;
     onChange({ ...rest, nhom: groups(plan.nhom), tuan: plan.tuan.map((w) => ({ ...w, nhom: groups(w.nhom), ngay: w.ngay.map((d) => ({ ...d, nhom: groups(d.nhom) })) })) });
@@ -27,7 +29,8 @@ export function BoMucTieuEditor({ plan, onChange }: { plan: KeHoachThang; onChan
   return <details className="rounded-the border border-vien bg-trang">
     <summary className="cursor-pointer p-4 font-bold">Bộ mục tiêu MT <span className="font-normal text-muc-nhat">· {b ? `${b.mucTieu.length} mục tiêu · ${b.phienBan}` : "Chưa chọn"}</span></summary>
     <div className="space-y-4 border-t border-vien p-4">
-      <p className="text-sm leading-relaxed text-muc-nhat">Mã MT thuộc bộ của trường/lớp. Nguồn, phiên bản và độ tuổi được lưu cùng kế hoạch; chọn mã ở từng ô sau khi có bộ mục tiêu.</p>
+      {hopThoai}
+      <p className="text-sm leading-relaxed text-muc-nhat">Mục tiêu (MT) là bộ mã mà trường hoặc lớp cô đang dùng. Sau khi thêm bộ mục tiêu, cô chọn mã MT cho từng ô hoạt động.</p>
       {!b ? <div className="flex flex-wrap gap-2">
         <Button type="button" variant="phu" onClick={() => update({ id: crypto.randomUUID(), ten: "Bộ mục tiêu của lớp", nguon: "Giáo viên nhập", phienBan: "1", doTuoi: plan.doTuoi, mucTieu: [] })}>Tạo bộ riêng</Button>
         <Button type="button" variant="phu" disabled={plan.doTuoi !== "5-6"} onClick={() => update(taoBoMucTieuThang10())}>Dùng 11 MT từ mẫu tháng 10 (5–6 tuổi)</Button>
@@ -47,7 +50,7 @@ export function BoMucTieuEditor({ plan, onChange }: { plan: KeHoachThang; onChan
             <div className="grid gap-3 sm:grid-cols-2"><Field label="Mã mục tiêu"><Input value={mt.ma} maxLength={40} placeholder="MT40" onChange={(e) => update({ ...b, mucTieu: b.mucTieu.map((m) => m.id === mt.id ? { ...m, ma: e.target.value } : m) })} /></Field><Field label="Chỉ tiêu (không bắt buộc)"><Input value={mt.chiTieu} maxLength={100} placeholder="1.1" onChange={(e) => update({ ...b, mucTieu: b.mucTieu.map((m) => m.id === mt.id ? { ...m, chiTieu: e.target.value } : m) })} /></Field></div>
             <Field label="Mô tả"><Textarea rows={4} value={mt.moTa} maxLength={6000} onChange={(e) => update({ ...b, mucTieu: b.mucTieu.map((m) => m.id === mt.id ? { ...m, moTa: e.target.value } : m) })} /></Field>
             <Field label="Lĩnh vực (không bắt buộc)"><select className={SELECT} value={mt.linhVuc ?? ""} onChange={(e) => update({ ...b, mucTieu: b.mucTieu.map((m) => m.id === mt.id ? { ...m, linhVuc: e.target.value ? e.target.value as typeof mt.linhVuc : undefined } : m) })}><option value="">Chưa phân loại</option>{LINH_VUC.map((l) => <option key={l}>{l}</option>)}</select></Field>
-            <Button type="button" variant="nhe" disabled={used(mt.id) > 0} onClick={() => { if (mt.moTa.trim() && !window.confirm(`Xóa mục tiêu ${mt.ma || "mới"} khỏi bộ?`)) return; update({ ...b, mucTieu: b.mucTieu.filter((m) => m.id !== mt.id) }); }}>Xóa mục tiêu</Button>
+            <Button type="button" variant="nhe" disabled={used(mt.id) > 0} onClick={async () => { if (mt.moTa.trim() && !(await xacNhan(`Xóa mục tiêu ${mt.ma || "mới"} khỏi bộ?`, { nutDongY: "Xóa" }))) return; update({ ...b, mucTieu: b.mucTieu.filter((m) => m.id !== mt.id) }); }}>Xóa mục tiêu</Button>
             {used(mt.id) > 0 && <p className="text-sm text-muc-nhat">Bỏ chọn mục tiêu ở các ô đang dùng trước khi xóa.</p>}
           </div>
         </details>)}</div>
@@ -83,7 +86,7 @@ function DungLaiBoMT({ doTuoi, onChoose }: { doTuoi: KeHoachThang["doTuoi"]; onC
     load().catch((e) => { if (active) setError(e instanceof Error && e.name !== "AbortError" ? e.message : "Tải danh sách quá lâu. Cô thử lại nhé."); }).finally(() => { clearTimeout(timer); if (active) setLoading(false); });
     return () => { active = false; controller.abort(); clearTimeout(timer); };
   }, [doTuoi, retry]);
-  return <div className="space-y-3 p-4"><p className="text-sm text-muc-nhat">Chọn bộ cùng độ tuổi từ các kế hoạch tải về trong thư viện. Bản sao giữ nguồn/phiên bản và được chỉnh riêng trong tháng này.</p>{loading ? <p role="status">Đang tải…</p> : items.length ? <ul className="max-h-96 divide-y divide-vien overflow-y-auto">{items.map((item) => <li key={item.id} className="space-y-2 py-3"><p className="font-semibold">{item.bo.ten} · {item.bo.phienBan}</p><p className="text-sm text-muc-nhat">{item.ten} · {item.bo.mucTieu.length} MT</p><Button type="button" variant="phu" onClick={() => onChoose(item.bo)}>Dùng bộ này</Button></li>)}</ul> : <p>Chưa có bộ MT cùng độ tuổi trong các kế hoạch đã tải về.</p>}{error && <p role="alert" className="text-sm text-butdo">{error}</p>}<Button type="button" variant="nhe" disabled={loading} onClick={() => setRetry((n) => n + 1)}>Tải lại danh sách</Button></div>;
+  return <div className="space-y-3 p-4"><p className="text-sm text-muc-nhat">Chọn bộ mục tiêu cùng độ tuổi từ các kế hoạch tháng cô đã lưu. Cô được sửa riêng cho tháng này, bộ gốc không bị đổi.</p>{loading ? <p role="status">Đang tải…</p> : items.length ? <ul className="max-h-96 divide-y divide-vien overflow-y-auto">{items.map((item) => <li key={item.id} className="space-y-2 py-3"><p className="font-semibold">{item.bo.ten} · {item.bo.phienBan}</p><p className="text-sm text-muc-nhat">{item.ten} · {item.bo.mucTieu.length} MT</p><Button type="button" variant="phu" onClick={() => onChoose(item.bo)}>Dùng bộ này</Button></li>)}</ul> : <p>Chưa có bộ MT cùng độ tuổi trong các kế hoạch đã tải về.</p>}{error && <p role="alert" className="text-sm text-butdo">{error}</p>}<Button type="button" variant="nhe" disabled={loading} onClick={() => setRetry((n) => n + 1)}>Tải lại danh sách</Button></div>;
 }
 
 export function ChonMucTieu({ bo, value, onChange }: { bo?: BoMucTieu; value: string[]; onChange: (ids: string[]) => void }) {

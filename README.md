@@ -170,7 +170,7 @@ Lấy chất liệu từ lớp học Việt Nam, định nghĩa trong `src/app/g
 
 ## Việc tiếp theo (theo kế hoạch 14 ngày)
 
-- [x] Supabase Auth, `middleware.ts` kiểm tra phiên và bảo vệ API/trang làm việc
+- [x] Supabase Auth, `src/middleware.ts` kiểm tra phiên và bảo vệ API/trang làm việc
 - [x] Ngày 3: prompt thật trong `lib/prompts.ts`; đã nối Gemini (giáo án, KHBD, kế hoạch tuần, tin nhắn, phiếu và trò chơi). Chưa so sánh nhiều mô hình
 - [x] Lưu tài liệu đã tạo vào `documents`, kế hoạch tuần vào thư viện
 - [x] Ngày 6: `/api/export/docx` bằng thư viện `docx` (giáo án, KHBD, kế hoạch tuần)

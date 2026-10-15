@@ -1,6 +1,7 @@
 "use client";
 
 import { KhbdPreview } from "@/components/GiaoAnPreview";
+import { Printer } from "lucide-react";
 import { NutTaiFile } from "@/components/NutTaiFile";
 import { SoanBai } from "@/components/SoanBai";
 import { KhbdNoiDungEditor } from "@/components/NoiDungBaiDayEditor";
@@ -18,14 +19,11 @@ export function KhbdEditor({ initial }: { initial: KeHoachBaiDay | null }) {
       initial={initial}
       render={(k) => <KhbdPreview k={k} />}
       renderEditor={(k, onChange) => <KhbdNoiDungEditor data={k} onChange={onChange} />}
-      actions={(kh) => (
-        <>
-          <p className="px-4 pb-1 pt-3 text-sm font-semibold text-muc-nhat">Tải và in</p>
-          <NutTaiFile loai="khbd" data={kh} tenFile={`KHBD - ${kh.tenBai}`} variant="nhe" />
-          <NutTaiFile loai="khbd" dinhDang="pdf" data={kh} tenFile={`KHBD - ${kh.tenBai}`} variant="nhe" />
-          <Button type="button" variant="nhe" onClick={() => window.print()}>In</Button>
-        </>
-      )}
+      primaryActions={(kh) => [
+        <NutTaiFile key="word" loai="khbd" data={kh} tenFile={`KHBD - ${kh.tenBai}`} nhan="Tải Word" />,
+        <NutTaiFile key="pdf" loai="khbd" dinhDang="pdf" data={kh} tenFile={`KHBD - ${kh.tenBai}`} variant="phu" nhan="Tải PDF" />,
+        <Button key="in" type="button" variant="phu" onClick={() => window.print()}><Printer size={17} aria-hidden="true" />In</Button>,
+      ]}
       form={(current) =>
         <>
           <div className="grid grid-cols-2 gap-3">

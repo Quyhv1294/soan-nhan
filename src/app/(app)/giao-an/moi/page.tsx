@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui";
-import { MOCK_GIAO_AN, MOCK_TUAN } from "@/lib/mock-data";
+import { MOCK_GIAO_AN } from "@/lib/mock-data";
 import { GiaoAnEditor } from "./GiaoAnEditor";
 import { loadDocument } from "@/lib/supabase/data";
 import type { GiaoAnMamNon } from "@/lib/types";
@@ -14,9 +14,8 @@ export const metadata: Metadata = { title: "Soạn giáo án mầm non" };
 export default async function SoanGiaoAn({ searchParams }: { searchParams: Promise<{ id?: string; hoatDong?: string; ten?: string; chuDe?: string; doTuoi?: string; linhVuc?: string; keHoachThang?: string; nhom?: string }> }) {
   const { id, hoatDong, ten, chuDe, doTuoi, linhVuc, keHoachThang, nhom } = await searchParams;
   const initial = id === MOCK_GIAO_AN.id ? MOCK_GIAO_AN : id ? await loadDocument<GiaoAnMamNon>(id, "giao-an") : null;
-  const tenHoatDong = ten ?? (hoatDong
-    ? MOCK_TUAN.ngay.flatMap((n) => n.hoatDong).find((h) => h.id === hoatDong)?.ten
-    : undefined);
+  // Tên hoạt động lấy từ liên kết; nếu chỉ có mã hoạt động thì trình soạn tự tra trong kế hoạch tuần thật của cô.
+  const tenHoatDong = ten;
 
   return (
     <>

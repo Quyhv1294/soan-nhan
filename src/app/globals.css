@@ -72,16 +72,18 @@ html {
     color-scheme: dark;
     --color-bang: #8bd3ad;
     --color-bang-dam: #a2dfbf;
-    --color-bang-nhat: #223e30;
-    --color-tren-bang: #10251d;
-    --color-giay: #101a16;
-    --color-trang: #19251f;
-    --color-oly: #263b30;
-    --color-oly-dam: #344e40;
-    --color-muc: #e6eee9;
-    --color-muc-nhat: #abbdb2;
-    --color-vien: #34483d;
-    --color-vien-nhap: #657e6e;
+    /* Nền than xám ngả xanh nhẹ (bớt xanh lục đậm), thẻ sáng hơn nền để thấy lớp. */
+    --color-bang-nhat: #1f3428;
+    --color-tren-bang: #0f1f18;
+    --color-giay: #0e1311;
+    --color-trang: #181f1b;
+    --color-oly: #222c26;
+    --color-oly-dam: #2f3d35;
+    --color-muc: #e8eeea;
+    --color-muc-nhat: #a9b8af;
+    --color-vien: #2f3b34;
+    --color-vien-nhap: #5f7366;
+    --color-phan: #dcbf62;
     --do-dam-gach-phan: 20%;
     --color-phan-nhat: #3d341e;
     --color-butdo: #ff9b91;
@@ -97,8 +99,14 @@ html {
     --color-la-nhat: #253b25;
     --color-nghe: #f2d080;
     --color-nghe-nhat: #3c341c;
-    --shadow-the: 0 1px 2px rgb(0 0 0 / 18%), 0 4px 16px -6px rgb(0 0 0 / 30%);
+    --shadow-the: 0 0 0 1px rgb(255 255 255 / 2%), 0 1px 2px rgb(0 0 0 / 25%), 0 6px 20px -8px rgb(0 0 0 / 45%);
     --shadow-noi: 0 2px 4px rgb(0 0 0 / 20%), 0 18px 40px -16px rgb(0 0 0 / 55%);
+  }
+  /* Tờ giấy trắng giữ đúng màu giấy nhưng dịu bớt để không chói giữa giao diện tối. */
+  html[data-theme="dark"] .trang-van-ban,
+  html[data-theme="dark"] .phieu-preview,
+  html[data-theme="dark"] .giay-co-dinh:not(.bang-phan) {
+    filter: brightness(0.94);
   }
   html[data-theme="dark"] select:not([multiple]):not([size]) {
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' fill='none' stroke='%23abbdb2' stroke-width='1.5'/></svg>");

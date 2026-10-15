@@ -1,6 +1,5 @@
 import { sinhNoiDung, SaiKhuon, type AiCauHinh, type KetQuaAi } from "./ai";
 import { giaoAnSchema, khbdSchema, kiemTraGiaoAn, kiemTraKhbd, kiemTraTuan, tuanSchema } from "./ai-schemas";
-import { MOCK_TUAN } from "./mock-data";
 import { buildPrompt, lamSachDauVao, type LoaiSinh } from "./prompts";
 import { DO_TUOI_LABEL, LINH_VUC, type DoTuoi, type KeHoachBaiDay, type NguCanhGiaoAnThang } from "./types";
 import { hocLieuSchema, kiemTraHocLieu } from "./hoc-lieu-ai";
@@ -28,8 +27,6 @@ function thuHaiGanNhat(): string {
   d.setUTCDate(d.getUTCDate() + (lui === 0 ? 0 : 7 - lui));
   return d.toISOString().slice(0, 10);
 }
-
-const ngayVN = (iso: string) => new Date(iso).toLocaleDateString("vi-VN", { timeZone: "UTC", day: "numeric", month: "numeric" });
 
 export type KetQuaSinh = { data: unknown; ket: KetQuaAi };
 
@@ -78,17 +75,16 @@ export async function taoBangAi(cfg: AiCauHinh, loai: LoaiSinh, tho: Record<stri
     }
 
     case "tin-nhan": {
-      const t = MOCK_TUAN;
-      const denNgay = new Date(t.tuNgay);
-      denNgay.setUTCDate(denNgay.getUTCDate() + 4);
+      // Nội dung tin nhắn phải bám kế hoạch tuần THẬT của cô (do trình duyệt gửi lên), không dùng kế hoạch mẫu.
+      can(input.chuDe && input.hoatDongHoc, "Cô tạo kế hoạch tuần trước để soạn tin nhắn theo tuần học nhé.");
       const bonDuLieu = {
         giongVan: input.giongVan || "Lịch sự, ngắn gọn",
-        tenLop: input.tenLop || "Mẫu giáo nhỡ A2",
-        chuDe: input.chuDe || t.chuDe,
-        nhanh: input.nhanh || t.nhanh || "",
-        tuNgay: input.tuNgay || ngayVN(t.tuNgay),
-        denNgay: input.denNgay || ngayVN(denNgay.toISOString()),
-        hoatDongHoc: input.hoatDongHoc || t.ngay.map((n) => `${n.thu}: ${n.hoatDong.find((h) => h.buoi === "Hoạt động học")?.ten}`).join("; "),
+        tenLop: input.tenLop || "",
+        chuDe: input.chuDe,
+        nhanh: input.nhanh || "",
+        tuNgay: input.tuNgay || "",
+        denNgay: input.denNgay || "",
+        hoatDongHoc: input.hoatDongHoc,
       };
       const { system, user } = buildPrompt(loai, bonDuLieu);
       return sinhNoiDung(cfg, {

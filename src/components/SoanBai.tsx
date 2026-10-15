@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Check, History, Loader2, Pencil, Redo2, Save, Undo2, WandSparkles } from "lucide-react";
 import { Button } from "./ui";
 import { ActionMenu } from "./ActionMenu";
@@ -13,13 +13,18 @@ import type { LoaiTaiLieu } from "@/lib/types";
 type Stage = "idle" | "generating" | "saving" | "saved" | "save-error";
 type SaveJob<T> = { data: T; versions: PhienBan<T>[]; source: NguonBanSoan };
 
-export function SoanBai<T extends TaiLieuCoId>({ loai, form, initial, render, renderEditor, actions, afterSave }: {
+export function SoanBai<T extends TaiLieuCoId>({ loai, form, initial, render, renderEditor, actions, primaryActions, tiepTheo, afterSave }: {
   loai: LoaiTaiLieu;
   form: ReactNode | ((data: T | null) => ReactNode);
   initial: T | null;
   render: (data: T) => ReactNode;
   renderEditor: (data: T, onChange: (data: T) => void) => ReactNode;
   actions?: (data: T) => ReactNode;
+  // Các nút cô cần nhất sau khi soạn xong (tải Word, tải PDF, in). Luôn hiện sẵn, không giấu trong menu.
+  // Mỗi phần tử là một nút; phần tử đầu là nút chính.
+  primaryActions?: (data: T) => ReactNode[];
+  // Khối "Làm tiếp" dưới bản soạn: gợi ý việc cô thường làm kế tiếp, mang theo chủ đề đã có.
+  tiepTheo?: (data: T) => ReactNode;
   afterSave?: (data: T) => ReactNode;
 }) {
   const initialVersion = initial ? docBanSoan(initial) : null;
@@ -161,16 +166,16 @@ export function SoanBai<T extends TaiLieuCoId>({ loai, form, initial, render, re
         {busy ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <WandSparkles size={18} aria-hidden="true" />}
         {stage === "generating" ? "Đang soạn…" : stage === "saving" ? "Đang lưu…" : data ? "Soạn lại" : "Soạn"}
       </Button></div>
-      {data && <p className="text-sm text-muc-nhat">Soạn lại sẽ tạo bản mới. Cô có thể khôi phục bản trước trong Lịch sử phiên bản.</p>}
+      <p className="text-sm text-muc-nhat">{data ? "Soạn lại sẽ tạo bản mới và dùng thêm 1 lượt. Cô có thể khôi phục bản trước trong Các bản đã lưu." : "Mỗi lần bấm Soạn dùng 1 lượt trong tháng."}</p>
       {draft && <p className="text-sm text-muc-nhat">Cô lưu hoặc hủy chỉnh sửa trước khi soạn lại nhé.</p>}
       {error && <p role="alert" className="text-sm text-butdo">{error}{data ? " Bản đang có vẫn được giữ lại." : ""}</p>}
     </form>
 
     <section id={`${uid}-output`} ref={outputRef} role="tabpanel" aria-labelledby={`${uid}-output-tab`} className={`soan-output min-w-0 scroll-mt-20 ${tab === "output" ? "" : "hidden xl:block"}`} aria-label="Bản soạn" aria-busy={busy}>
       <div className="khong-in mb-4" role="status" aria-live="polite" aria-atomic="true">
-        {stage === "generating" && <div className="rounded-o bg-phan-nhat p-4 text-sm"><p className="flex items-center gap-2 font-semibold"><Loader2 size={17} className="animate-spin" aria-hidden="true" />Đang soạn nội dung…</p><p className="mt-1 text-muc-nhat">{elapsed < 30 ? "Thời gian tùy độ dài bài và tình trạng dịch vụ AI." : "AI đang cần thêm thời gian. Cô giữ trang mở để nhận kết quả nhé."} Đã chờ {elapsed} giây.</p></div>}
+        {stage === "generating" && <div className="rounded-o bg-phan-nhat p-4 text-sm"><p className="flex items-center gap-2 font-semibold"><Loader2 size={17} className="animate-spin" aria-hidden="true" />Đang soạn nội dung…</p><p className="mt-1 text-muc-nhat">{elapsed < 30 ? "Thường mất 10–30 giây. Cô giữ trang này mở nhé." : elapsed < 60 ? "Hôm nay AI hơi chậm. Cô chờ thêm chút, bản soạn sẽ tự hiện ra." : "AI đang rất chậm. Cô chờ thêm, hoặc thử lại sau ít phút nếu vẫn chưa có kết quả."} Đã chờ {elapsed} giây.</p></div>}
         {stage === "saving" && <p className="flex items-center gap-2 rounded-o bg-bang-nhat p-3 text-sm"><Loader2 size={17} className="animate-spin" aria-hidden="true" />Đã có nội dung · Đang lưu vào thư viện…</p>}
-        {stage === "saved" && <p className="flex items-center gap-2 rounded-o bg-la-nhat p-3 text-sm text-bang"><Check size={17} aria-hidden="true" />Đã lưu vào thư viện, bao gồm lịch sử phiên bản.</p>}
+        {stage === "saved" && <p className="flex items-center gap-2 rounded-o bg-la-nhat p-3 text-sm text-bang"><Check size={17} aria-hidden="true" />Đã lưu vào thư viện (có giữ các bản cũ).</p>}
       </div>
       {stage === "save-error" && <div className="khong-in mb-4 rounded-o border border-butdo/30 bg-phan-nhat p-4"><p role="alert" className="text-sm"><b>Nội dung đã sẵn sàng nhưng chưa lưu được.</b> {saveError}</p><p className="mt-1 text-sm text-muc-nhat">Cô có thể thử lưu lại hoặc tải file. Giữ trang mở để không mất bản đang có.</p><Button type="button" className="mt-3 hidden xl:inline-flex" onClick={retrySave}><Save size={17} aria-hidden="true" />Thử lưu lại</Button><p className="mt-2 text-sm text-muc-nhat">Thử lưu lại không gọi AI và không dùng thêm lượt soạn.</p></div>}
 
@@ -182,16 +187,17 @@ export function SoanBai<T extends TaiLieuCoId>({ loai, form, initial, render, re
           {renderEditor(draft, updateDraft)}
           <div className="hidden flex-wrap gap-2 border-t border-vien pt-4 xl:flex"><Button type="submit" disabled={!draftChanged}>Lưu thay đổi</Button><Button type="button" variant="phu" onClick={() => setDraft(null)}>Hủy chỉnh sửa</Button></div>
         </form> : <>
-          <div className="khong-in mb-4 hidden flex-wrap gap-2 xl:flex"><Button type="button" variant={stage === "save-error" ? "phu" : "chinh"} disabled={busy} onClick={startEditing}><Pencil size={17} aria-hidden="true" />Chỉnh sửa</Button><ActionMenu label="Tùy chọn tài liệu"><Button type="button" variant="nhe" data-close-menu onClick={() => setPreviewOpen(true)}>Xem lớn</Button>{actions?.(data)}</ActionMenu></div>
-          {versions.length > 0 && <details className="khong-in mb-4 rounded-o border border-vien bg-trang p-3"><summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold"><History size={17} aria-hidden="true" />Lịch sử phiên bản ({versions.length})</summary><p className="mt-2 text-xs text-muc-nhat">Giữ tối đa 5 bản trước. Khôi phục không dùng lượt AI.</p><ul className="mt-3 divide-y divide-vien">{versions.map((version, i) => <li key={`${version.luc}-${i}`} className="flex flex-wrap items-center justify-between gap-2 py-2"><span className="text-sm">{version.nhan}<span className="block text-xs text-muc-nhat">{new Date(version.luc).toLocaleString("vi-VN")}</span></span><Button type="button" variant="nhe" disabled={busy} onClick={() => restore(i)} aria-label={`Khôi phục phiên bản ${i + 1}`}>Khôi phục</Button></li>)}</ul></details>}
+          <div className="khong-in mb-4 hidden flex-wrap items-center gap-2 xl:flex">{primaryActions?.(data).map((node, i) => <Fragment key={i}>{node}</Fragment>)}<Button type="button" variant="phu" disabled={busy} onClick={startEditing}><Pencil size={17} aria-hidden="true" />Chỉnh sửa</Button><ActionMenu label="Tùy chọn khác"><Button type="button" variant="nhe" data-close-menu onClick={() => setPreviewOpen(true)}>Xem lớn</Button>{actions?.(data)}</ActionMenu></div>
+          {versions.length > 0 && <details className="khong-in mb-4 rounded-o border border-vien bg-trang p-3"><summary className="flex cursor-pointer items-center gap-2 text-sm font-semibold"><History size={17} aria-hidden="true" />Các bản đã lưu ({versions.length})</summary><p className="mt-2 text-xs text-muc-nhat">Giữ tối đa 5 bản trước đó. Quay lại bản cũ không mất lượt AI.</p><ul className="mt-3 divide-y divide-vien">{versions.map((version, i) => <li key={`${version.luc}-${i}`} className="flex flex-wrap items-center justify-between gap-2 py-2"><span className="text-sm">{version.nhan}<span className="block text-xs text-muc-nhat">{new Date(version.luc).toLocaleString("vi-VN")}</span></span><Button type="button" variant="nhe" disabled={busy} onClick={() => restore(i)} aria-label={`Khôi phục phiên bản ${i + 1}`}>Khôi phục</Button></li>)}</ul></details>}
           <div className={`overflow-x-auto ${stage === "generating" ? "opacity-60" : ""}`}>{render(data)}</div>
           <p className="khong-in mt-4 border-l-2 border-vien pl-3 text-sm leading-relaxed text-muc-nhat">{source === "mau" ? "Đây là nội dung mẫu để dùng thử." : source === "chinh-sua" ? "Bản đã được cô chỉnh sửa. File tải về dùng đúng nội dung đang xem." : source === "ai" ? "Nội dung do AI soạn. Cô đọc lại và chỉnh cho phù hợp với lớp trước khi dùng." : "Cô có thể chỉnh sửa nội dung trước khi tải file và sử dụng."}</p>
+          {tiepTheo && <section className="khong-in mt-6 rounded-the border border-vien bg-trang p-4 shadow-the" aria-label="Làm tiếp"><h2 className="font-bold">Làm tiếp từ bài này</h2><p className="mt-1 text-sm text-muc-nhat">Chủ đề được giữ nguyên, cô không cần nhập lại.</p><div className="mt-3 grid gap-2 sm:grid-cols-3">{tiepTheo(data)}</div></section>}
         </>}
       </> : <div className="o-ly rounded-the border border-oly-dam p-8 text-center"><div className="mx-auto max-w-lg rounded-o bg-trang/95 p-6"><h2 className="text-lg font-semibold">Bản soạn của cô</h2><p className="mt-2 text-base leading-relaxed text-muc-nhat">{stage === "generating" ? "Bản soạn sẽ xuất hiện ở đây khi hoàn tất." : "Điền thông tin rồi bấm Soạn để nhận bản nháp."}</p></div></div>}
     </section>
-    <div className="khong-in fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 flex items-center justify-center gap-2 border-t border-vien bg-trang/95 px-3 py-2 backdrop-blur lg:bottom-0 lg:left-[264px] xl:hidden" aria-label="Thao tác soạn bài">
-      {draft ? <><Button type="submit" form={`${uid}-edit`} disabled={busy || !draftChanged}>Lưu thay đổi</Button><Button type="button" variant="phu" onClick={() => setDraft(null)}>Hủy</Button></> : stage === "save-error" ? <Button type="button" disabled={busy} onClick={retrySave}>Thử lưu lại</Button> : tab === "info" ? <Button type="submit" form={`${uid}-info`} disabled={busy}>{busy ? "Đang xử lý…" : data ? "Soạn lại" : "Soạn"}</Button> : data ? <Button type="button" disabled={busy} onClick={startEditing}>Chỉnh sửa</Button> : <Button type="button" onClick={() => setTab("info")}>Điền thông tin</Button>}
-      {data && !draft && <ActionMenu label="Tùy chọn"><Button type="button" variant="nhe" data-close-menu onClick={() => setPreviewOpen(true)}>Xem lớn</Button>{actions?.(data)}</ActionMenu>}
+    <div className="khong-in fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 flex items-center justify-center gap-2 border-t border-vien bg-trang/95 px-3 py-2 backdrop-blur lg:bottom-0 lg:left-[264px] xl:hidden [&_button]:whitespace-nowrap [&_button]:px-3" aria-label="Thao tác soạn bài">
+      {draft ? <><Button type="submit" form={`${uid}-edit`} disabled={busy || !draftChanged}>Lưu thay đổi</Button><Button type="button" variant="phu" onClick={() => setDraft(null)}>Hủy</Button></> : stage === "save-error" ? <Button type="button" disabled={busy} onClick={retrySave}>Thử lưu lại</Button> : tab === "info" ? <Button type="submit" form={`${uid}-info`} disabled={busy}>{busy ? "Đang xử lý…" : data ? "Soạn lại" : "Soạn"}</Button> : data ? <>{primaryActions?.(data)[0]}<Button type="button" variant={primaryActions ? "phu" : "chinh"} disabled={busy} onClick={startEditing}>Chỉnh sửa</Button></> : <Button type="button" onClick={() => setTab("info")}>Điền thông tin</Button>}
+      {data && !draft && <ActionMenu label="Thêm"><Button type="button" variant="nhe" data-close-menu onClick={() => setPreviewOpen(true)}>Xem lớn</Button>{(tab === "info" ? primaryActions?.(data) : primaryActions?.(data).slice(1))?.map((node, i) => <Fragment key={i}>{node}</Fragment>)}{actions?.(data)}</ActionMenu>}
     </div>
     {previewOpen && data && <XemLon onClose={() => setPreviewOpen(false)}>{render(data)}</XemLon>}
   </div>;

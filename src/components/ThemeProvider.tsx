@@ -14,7 +14,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const apply = useCallback((next: Theme) => {
     document.documentElement.dataset.theme = next;
     document.documentElement.style.colorScheme = next;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "dark" ? "#101a16" : "#fafaf6");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "dark" ? "#0e1311" : "#fafaf6");
     setTheme(next);
   }, []);
 

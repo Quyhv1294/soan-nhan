@@ -110,12 +110,18 @@ export async function POST(req: Request) {
     if (!allowed) return NextResponse.json({ error: "Cô đã dùng hết lượt soạn miễn phí tháng này." }, { status: 429 });
   }
 
+  // Lượt đã bị trừ ở trên; AI lỗi thì trả lại để cô không mất lượt oan. Chưa có hàm SQL thì bỏ qua, không làm hỏng phản hồi.
+  const hoanLuot = async () => {
+    if (demoAllowed()) return;
+    try { const supabase = await createClient(); await supabase.rpc("hoan_luot_soan"); } catch { /* bỏ qua */ }
+  };
   try {
     const { data, ket } = await taoBangAi(cfg, loai, input, context);
     // Chỉ ghi số liệu vận hành, không ghi nội dung người dùng và không ghi khóa.
     console.info(`[ai] ${loai} ${ket.mohinh} ${ket.ms}ms vao=${ket.tokenVao ?? "?"} ra=${ket.tokenRa ?? "?"}`);
     return NextResponse.json({ data, nguon: "ai" });
   } catch (e) {
+    await hoanLuot();
     if (e instanceof DauVaoSai) return NextResponse.json({ error: e.message }, { status: 400 });
     if (e instanceof ChuaHoTro) return NextResponse.json({ error: "Loại nội dung này chưa được hỗ trợ trong bản dựng." }, { status: 501 });
     if (e instanceof AiError) {

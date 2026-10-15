@@ -182,7 +182,7 @@ export default function TrangChu() {
           </div>
           <Link
             href="/dang-nhap?moi=1"
-            className="inline-flex items-center gap-2 h-12 px-6 rounded-o bg-phan text-muc font-semibold hover:bg-white transition-colors"
+            className="inline-flex items-center gap-2 h-12 px-6 rounded-o bg-phan text-muc font-semibold hover:brightness-110 transition-colors"
           >
             Dùng thử miễn phí
             <ArrowRight size={18} aria-hidden="true" />
@@ -193,9 +193,9 @@ export default function TrangChu() {
       <footer className="border-t border-vien">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 py-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muc-nhat">
           <Logo className="mr-auto" />
-          <Link href="/dieu-khoan" className="hover:text-muc">Điều khoản sử dụng</Link>
-          <Link href="/quyen-rieng-tu" className="hover:text-muc">Chính sách quyền riêng tư</Link>
-          <a href="mailto:hotro@soannhan.vn" className="hover:text-muc">hotro@soannhan.vn</a>
+          <Link href="/dieu-khoan" className="inline-flex min-h-11 items-center hover:text-muc">Điều khoản sử dụng</Link>
+          <Link href="/quyen-rieng-tu" className="inline-flex min-h-11 items-center hover:text-muc">Chính sách quyền riêng tư</Link>
+          <a href="mailto:hotro@soannhan.vn" className="inline-flex min-h-11 items-center hover:text-muc">hotro@soannhan.vn</a>
           <span>© 2026 {SITE.name}</span>
         </div>
       </footer>
@@ -227,16 +227,16 @@ function TrangVoMau() {
               <li key={thu} className="flex items-center gap-3 bg-trang border border-vien rounded-o pl-2 pr-2.5 py-2 shadow-[0_1px_0_rgba(29,36,51,0.04)]">
                 <OBieuTuong icon={icon} mau={mau} size="sm" />
                 <span className="flex-1 min-w-0">
-                  <span className="block text-[11.5px] font-semibold text-muc-nhat">{thu}</span>
+                  <span className="block text-[13px] font-semibold text-muc-nhat">{thu}</span>
                   <span className="block text-[14.5px] font-medium leading-snug">{hd}</span>
                 </span>
                 {i === 0 ? (
-                  <span className="inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-md bg-phan text-muc">
+                  <span className="inline-flex items-center gap-1 text-[13px] font-semibold px-2 py-1 rounded-md bg-phan text-muc">
                     <Check size={13} strokeWidth={3} aria-hidden="true" />
                     Đã soạn
                   </span>
                 ) : (
-                  <span className="text-[12px] font-semibold px-2 py-1 rounded-md border border-bang/40 text-bang">Soạn</span>
+                  <span className="text-[13px] font-semibold px-2 py-1 rounded-md border border-bang/40 text-bang">Soạn</span>
                 )}
               </li>
             );

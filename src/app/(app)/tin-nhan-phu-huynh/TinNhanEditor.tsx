@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, Loader2, RefreshCw, Users } from "lucide-react";
+import Link from "next/link";
+import { useXacNhan } from "@/components/XacNhan";
+import { Check, Copy, Loader2, RefreshCw, Users, WandSparkles } from "lucide-react";
 import { Button, Field, Select, Textarea } from "@/components/ui";
-import { MOCK_TIN_NHAN } from "@/lib/mock-data";
 import { docNoiDung, luuTaiLieu } from "@/lib/kho-local";
 import { useHoSo } from "@/lib/use-ho-so";
+import { useDanhSachTuan } from "@/lib/use-tuan";
 import { useTuan } from "@/lib/use-tuan";
 import { ActionMenu } from "@/components/ActionMenu";
 
@@ -31,16 +33,22 @@ async function saoChep(text: string) {
 
 export function TinNhanEditor() {
   const { profile, daNap: profileReady } = useHoSo();
-  const { tuan: plan, daNap: planReady, error: planError } = useTuan();
+  const { xacNhan, hopThoai } = useXacNhan();
+  const { tuan: hienTai, daNap: planReady, error: planError, coKeHoach } = useTuan();
+  const dsKeHoach = useDanhSachTuan();
+  const [chonId, setChonId] = useState("");
+  // Kế hoạch dùng để soạn: cái cô chọn, không thì kế hoạch tuần hiện tại.
+  const plan = dsKeHoach.find((p) => p.id === chonId) ?? hienTai;
+  const nhanKeHoach = (p: { chuDe: string; tuNgay: string }) => `${p.chuDe} · tuần ${new Date(p.tuNgay).toLocaleDateString("vi-VN", { timeZone: "UTC" })}`;
   const className = profile.tenLop || "lớp mình";
-  const [text, setText] = useState(MOCK_TIN_NHAN);
+  const [text, setText] = useState(""); // trống cho đến khi cô soạn: không để tin nhắn mẫu giống thật
   const [trangThai, setTrangThai] = useState<"" | "da-chep" | "loi">("");
   const [giong, setGiong] = useState("Lịch sự, ngắn gọn");
   const [phase, setPhase] = useState<"idle" | "generating" | "saving" | "saved" | "save-error">("idle");
   const dangSoan = phase === "generating";
   const busy = dangSoan || phase === "saving";
   const [loiSoan, setLoiSoan] = useState<string | null>(null);
-  const [banSoan, setBanSoan] = useState(MOCK_TIN_NHAN); // bản AI soạn gần nhất, để biết cô đã sửa chưa
+  const [banSoan, setBanSoan] = useState(""); // bản AI soạn gần nhất, để biết cô đã sửa chưa
   const [saveMessage, setSaveMessage] = useState("");
   const [documentId, setDocumentId] = useState(() => crypto.randomUUID());
   const pendingSave = useRef<Record<string, unknown> | null>(null);
@@ -75,7 +83,7 @@ export function TinNhanEditor() {
   }
   async function luuTinNhan() {
     if (busy) return;
-    await savePayload(pendingSave.current ?? { id: documentId, tenHoatDong: "Tin nhắn phụ huynh", chuDe: plan.chuDe, noiDung: text });
+    await savePayload(pendingSave.current ?? { id: documentId, tenHoatDong: "Tin nhắn phụ huynh", chuDe: coKeHoach ? plan.chuDe : "", noiDung: text });
   }
 
   async function chep() {
@@ -90,8 +98,9 @@ export function TinNhanEditor() {
 
   async function soanLai() {
     if (busy || phase === "save-error" || !planReady || !profileReady || planError) return;
+    if (!coKeHoach) { setLoiSoan("Cô tạo kế hoạch tuần trước để soạn tin nhắn theo tuần học nhé."); return; }
     // Cô đã sửa tay thì hỏi trước khi ghi đè.
-    if (text !== banSoan && !window.confirm("Cô đã chỉnh nội dung. Soạn lại sẽ thay bằng bản mới, cô muốn tiếp tục?")) return;
+    if (text !== banSoan && !(await xacNhan("Cô đã chỉnh nội dung. Soạn lại sẽ thay bằng bản mới, cô muốn tiếp tục?", { nutDongY: "Soạn lại" }))) return;
     setPhase("generating"); setSaveMessage("");
     setLoiSoan(null);
     try {
@@ -118,23 +127,33 @@ export function TinNhanEditor() {
 
   return (
     <div className="grid gap-10 xl:grid-cols-[1fr_360px] items-start">
+      {hopThoai}
       <div className="space-y-5 rounded-the border border-vien bg-trang p-5 sm:p-6 shadow-the">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Dựa trên">
-            <Select options={[`Kế hoạch tuần: ${plan.chuDe} (${new Date(plan.tuNgay).toLocaleDateString("vi-VN", { timeZone: "UTC" })})`]} />
+            {coKeHoach
+              ? <Select value={plan.id ?? ""} disabled={busy} onChange={(e) => setChonId(e.target.value)} options={(dsKeHoach.length ? dsKeHoach : [hienTai]).map((p) => ({ value: p.id ?? "", label: nhanKeHoach(p) }))} />
+              : <Select options={["Chưa có kế hoạch tuần"]} disabled />}
           </Field>
           <Field label="Giọng văn">
             <Select options={["Lịch sự, ngắn gọn", "Thân mật", "Trang trọng"]} value={giong} disabled={busy} onChange={(e) => setGiong(e.target.value)} />
           </Field>
         </div>
         <Field label="Nội dung">
-          <Textarea rows={15} value={text} disabled={busy} onChange={(e) => { setText(e.target.value); setPhase("idle"); setSaveMessage(""); pendingSave.current = null; }} />
+          <Textarea rows={15} value={text} disabled={busy} placeholder="Bấm Soạn tin nhắn, AI sẽ viết tin gửi nhóm Zalo phụ huynh theo kế hoạch tuần của cô. Cô đọc lại và chỉnh trước khi gửi." onChange={(e) => { setText(e.target.value); setPhase("idle"); setSaveMessage(""); pendingSave.current = null; }} />
         </Field>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant={phase === "save-error" ? "phu" : "chinh"} onClick={chep} className="h-12 px-5" disabled={busy}>
-            {trangThai === "da-chep" ? <Check size={18} strokeWidth={2.5} aria-hidden="true" /> : <Copy size={18} aria-hidden="true" />}
-            {trangThai === "da-chep" ? "Đã sao chép" : "Sao chép tin nhắn"}
-          </Button>
+          {text.trim() ? (
+            <Button type="button" variant={phase === "save-error" ? "phu" : "chinh"} onClick={chep} className="h-12 px-5" disabled={busy}>
+              {trangThai === "da-chep" ? <Check size={18} strokeWidth={2.5} aria-hidden="true" /> : <Copy size={18} aria-hidden="true" />}
+              {trangThai === "da-chep" ? "Đã sao chép" : "Sao chép tin nhắn"}
+            </Button>
+          ) : (
+            <Button type="button" onClick={soanLai} className="h-12 px-5" disabled={busy || !planReady || !profileReady || Boolean(planError)}>
+              {dangSoan ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <WandSparkles size={18} aria-hidden="true" />}
+              {dangSoan ? "Đang soạn…" : "Soạn tin nhắn"}
+            </Button>
+          )}
           {phase === "save-error" && <Button type="button" onClick={luuTinNhan} disabled={busy}>Thử lưu lại</Button>}
           <ActionMenu label="Tùy chọn tin nhắn"><Button type="button" variant="nhe" onClick={soanLai} disabled={busy || phase === "save-error" || !planReady || !profileReady || Boolean(planError)}>
             {dangSoan ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <RefreshCw size={17} aria-hidden="true" />}
@@ -148,6 +167,11 @@ export function TinNhanEditor() {
         {busy && <p className="text-sm text-muc-nhat" role="status">{dangSoan ? "Đang soạn tin nhắn… Thời gian tùy nội dung và dịch vụ AI." : "Đã có nội dung · Đang lưu vào thư viện…"}</p>}
         {saveMessage && <p className={`text-sm ${phase === "save-error" ? "text-butdo" : "text-la"}`} role={phase === "save-error" ? "alert" : "status"}>{phase === "save-error" ? `Nội dung vẫn được giữ lại. ${saveMessage} Cô giữ trang mở và thử lưu lại, không dùng thêm lượt AI.` : saveMessage}</p>}
         {planError && <p role="alert" className="text-sm text-butdo">{planError}</p>}
+        {planReady && !coKeHoach && !planError && (
+          <p className="rounded-o bg-phan-nhat p-3 text-sm">
+            Cô chưa có kế hoạch tuần. <Link href="/ke-hoach-tuan" className="font-semibold text-bang underline">Tạo kế hoạch tuần</Link> để AI soạn tin nhắn đúng chủ đề và các hoạt động trong tuần.
+          </p>
+        )}
         {loiSoan && (
           <p className="text-[13px] text-butdo" role="alert">
             {loiSoan}

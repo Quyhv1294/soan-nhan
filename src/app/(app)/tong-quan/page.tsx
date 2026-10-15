@@ -6,6 +6,7 @@ import { LOAI_LABEL } from "@/components/LoaiTaiLieu";
 import { ButtonLink } from "@/components/ui";
 import { MOCK_THU_VIEN, MOCK_TUAN } from "@/lib/mock-data";
 import { APP_NAV } from "@/lib/site";
+import { hrefSoanGiaoAn, hrefXemGiaoAn } from "@/lib/lien-ket";
 import { DO_TUOI_LABEL } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { demoAllowed } from "@/lib/supabase/configured";
@@ -67,14 +68,14 @@ export default async function TongQuan() {
           <div className="flex flex-wrap gap-2">
             {tiepTheo && (
               <Link
-                href={`/giao-an/moi?hoatDong=${tiepTheo.hd.id}`}
-                className="inline-flex items-center gap-2 h-11 px-5 rounded-o bg-phan text-muc font-semibold hover:bg-white transition-colors"
+                href={hrefSoanGiaoAn(tuan, tiepTheo.hd)}
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-o bg-phan text-muc font-semibold hover:brightness-110 transition-colors"
               >
                 Soạn tiếp: {tiepTheo.thu}
                 <ArrowRight size={17} aria-hidden="true" />
               </Link>
             )}
-            <Link href="/ke-hoach-tuan" className="inline-flex items-center h-11 px-5 rounded-o border border-white/30 font-semibold hover:bg-white/10 transition-colors">
+            <Link href="/ke-hoach-tuan" className="inline-flex items-center h-11 px-5 rounded-o border border-white/30 font-semibold hover:brightness-110/10 transition-colors">
               Mở kế hoạch tuần
             </Link>
           </div>
@@ -85,12 +86,12 @@ export default async function TongQuan() {
       <section className="mt-10">
         <div className="flex items-end justify-between gap-4">
           <h2 className="text-lg font-bold">Hoạt động học tuần này</h2>
-          <Link href="/ke-hoach-tuan" className="text-sm font-semibold text-bang hover:underline">Xem cả tuần</Link>
+          <Link href="/ke-hoach-tuan" className="inline-flex min-h-11 items-center px-1 text-sm font-semibold text-bang hover:underline">Xem cả tuần</Link>
         </div>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {hoatDongHoc.map(({ thu, hd }) => {
             const lv = hd.linhVuc ? LINH_VUC_MAU[hd.linhVuc] : null;
-            const href = hd.giaoAnId ? `/giao-an/moi?id=${hd.giaoAnId}` : `/giao-an/moi?hoatDong=${hd.id}`;
+            const href = hd.giaoAnId ? hrefXemGiaoAn(hd.giaoAnId) : hrefSoanGiaoAn(tuan, hd);
             return (
               <li key={hd.id}>
                 <Link
@@ -102,17 +103,17 @@ export default async function TongQuan() {
                   <div className="flex items-center justify-between">
                     <span className="text-[13px] font-bold text-muc-nhat">{thu}</span>
                     {hd.giaoAnId ? (
-                      <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold px-2 py-0.5 rounded-full bg-phan text-muc">
+                      <span className="inline-flex items-center gap-1 text-[13px] font-semibold px-2 py-0.5 rounded-full bg-phan text-muc">
                         <Check size={12} strokeWidth={3} aria-hidden="true" />
                         Đã soạn
                       </span>
                     ) : (
-                      <span className="text-[11.5px] font-semibold px-2 py-0.5 rounded-full bg-giay text-muc-nhat">Chưa soạn</span>
+                      <span className="text-[13px] font-semibold px-2 py-0.5 rounded-full bg-giay text-muc-nhat">Chưa soạn</span>
                     )}
                   </div>
                   <p className="mt-3 font-semibold leading-snug flex-1">{hd.ten}</p>
                   {lv && (
-                    <span className={`mt-4 inline-flex items-center gap-1.5 self-start text-[12px] font-semibold px-2 py-1 rounded-md ${lv.mau.nen} ${lv.mau.chu}`}>
+                    <span className={`mt-4 inline-flex items-center gap-1.5 self-start text-[13px] font-semibold px-2 py-1 rounded-md ${lv.mau.nen} ${lv.mau.chu}`}>
                       <lv.icon size={13} aria-hidden="true" />
                       {lv.ngan}
                     </span>
@@ -154,7 +155,7 @@ export default async function TongQuan() {
         <aside>
           <div className="flex items-end justify-between gap-4">
             <h2 className="text-lg font-bold">Mới soạn gần đây</h2>
-            <Link href="/thu-vien" className="text-sm font-semibold text-bang hover:underline">Thư viện</Link>
+            <Link href="/thu-vien" className="inline-flex min-h-11 items-center px-1 text-sm font-semibold text-bang hover:underline">Thư viện</Link>
           </div>
           <ul className="mt-4 rounded-the border border-vien bg-trang divide-y divide-vien">
             {taiLieu.slice(0, 4).map((t) => {
@@ -165,7 +166,7 @@ export default async function TongQuan() {
                     <OBieuTuong icon={tn.icon} mau={tn.mau} size="sm" />
                     <span className="min-w-0">
                       <span className="block text-[14.5px] font-medium truncate">{t.tieuDe}</span>
-                      <span className="block text-[12.5px] text-muc-nhat">{LOAI_LABEL[t.loai]}</span>
+                      <span className="block text-[13px] text-muc-nhat">{LOAI_LABEL[t.loai]}</span>
                     </span>
                   </Link>
                 </li>

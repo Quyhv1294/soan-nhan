@@ -15,7 +15,7 @@ export default function BatDau() {
           <div className="flex items-center justify-between gap-3"><Logo /><ThemeToggle compact /></div>
           <div className="relative mt-6 rounded-[20px] border border-vien bg-trang p-6 sm:p-8 shadow-noi">
             <span className="bang-dinh -top-3 left-1/2 -translate-x-1/2 -rotate-2" aria-hidden="true" />
-            <div className="flex items-center gap-2 text-[12px] font-semibold text-muc-nhat">
+            <div className="flex items-center gap-2 text-[13px] font-semibold text-muc-nhat">
               <span className="h-1.5 w-8 rounded-full bg-bang" aria-hidden="true" />
               <span className="h-1.5 w-8 rounded-full bg-bang" aria-hidden="true" />
               <span className="ml-1">Bước 2/2</span>

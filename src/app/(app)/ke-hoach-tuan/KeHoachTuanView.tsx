@@ -1,5 +1,8 @@
 "use client";
 
+import { SITE } from "@/lib/site";
+import { demoAllowed } from "@/lib/supabase/configured";
+import { useXacNhan } from "@/components/XacNhan";
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { BookOpen, Blocks, Check, ChevronDown, Loader2, Sun, Sunset, Trees, WandSparkles, type LucideIcon } from "lucide-react";
@@ -13,7 +16,6 @@ import { hrefSoanGiaoAn, hrefXemGiaoAn, khoangNgay } from "@/lib/lien-ket";
 import { DO_TUOI_LABEL, type GiaoAnMamNon, type HoatDongTrongNgay, type KeHoachTuan } from "@/lib/types";
 import { useTuan } from "@/lib/use-tuan";
 import { useHoSo } from "@/lib/use-ho-so";
-import { ActionMenu } from "@/components/ActionMenu";
 
 const BUOI: { ten: HoatDongTrongNgay["buoi"]; icon: LucideIcon }[] = [
   { ten: "Đón trẻ", icon: Sun },
@@ -31,8 +33,9 @@ type PendingSave = { loai: "ke-hoach-tuan"; data: KeHoachTuan } | { loai: "giao-
 // Trên máy tính: lưới 5 ngày × 5 buổi giống bảng kế hoạch giáo viên vẫn kẻ tay.
 // Trên điện thoại: từng ngày xếp dọc.
 export function KeHoachTuanView() {
-  const { tuan: t, capNhat, daNap, error: planError } = useTuan();
+  const { tuan: t, capNhat, daNap, error: planError, coKeHoach } = useTuan();
   const { profile, daNap: profileReady } = useHoSo();
+  const { xacNhan, hopThoai } = useXacNhan();
   const [dangTaoTuan, setDangTaoTuan] = useState(false);
   const [tienDo, setTienDo] = useState<{ xong: number; tong: number; ten: string } | null>(null);
   const [loi, setLoi] = useState<string | null>(null);
@@ -40,6 +43,7 @@ export function KeHoachTuanView() {
   const [buoc, setBuoc] = useState<"soan" | "luu" | null>(null);
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
   const [dangLuuLai, setDangLuuLai] = useState(false);
+  const [chuDeNhap, setChuDeNhap] = useState("");
 
   const hoc = hocCuaNgay(t);
   const daSoan = hoc.filter((h) => h.giaoAnId).length;
@@ -76,7 +80,7 @@ export function KeHoachTuanView() {
       setLoi("Cô chưa nhập chủ đề.");
       return;
     }
-    if (daSoan > 0 && !window.confirm(`Kế hoạch hiện tại đã có ${daSoan} giáo án. Tạo kế hoạch mới sẽ thay thế kế hoạch này. Cô muốn tiếp tục?`)) return;
+    if (coKeHoach && daSoan > 0 && !(await xacNhan(`Kế hoạch hiện tại đã có ${daSoan} giáo án. Tạo kế hoạch mới sẽ thay thế kế hoạch này. Cô muốn tiếp tục?`, { nutDongY: "Thay bằng kế hoạch mới" }))) return;
     setLoi(null);
     setThongBao(null);
     setDangTaoTuan(true);
@@ -106,6 +110,14 @@ export function KeHoachTuanView() {
   async function soanCaTuan() {
     const canSoan = hoc.filter((h) => !h.giaoAnId);
     if (!canSoan.length) return;
+    // Nói trước chi phí: mỗi giáo án là 1 lượt AI và mất 10–25 giây, để cô không bấm rồi ngạc nhiên.
+    const n = canSoan.length;
+    const conLai = Math.max(0, SITE.freeQuota - profile.luotDaDung);
+    const phut = (giay: number) => Math.max(1, Math.round(giay / 60));
+    const loiHoi = `Soạn ${n} giáo án sẽ dùng ${n} lượt trong tháng${demoAllowed() ? "" : ` (cô còn ${conLai} lượt)`} và mất khoảng ${phut(n * 10)}–${phut(n * 25)} phút. Cô giữ trang này mở đến khi xong nhé.${!demoAllowed() && conLai < n ? `
+
+Lượt còn lại không đủ cho cả ${n} giáo án, việc soạn sẽ dừng khi hết lượt, các giáo án đã soạn vẫn được giữ.` : ""}`;
+    if (!(await xacNhan(loiHoi, { nutDongY: `Soạn ${n} giáo án`, nutHuy: "Để sau" }))) return;
     setLoi(null);
     setThongBao(null);
     let xong = 0;
@@ -136,26 +148,25 @@ export function KeHoachTuanView() {
     setThongBao(`Đã soạn xong ${xong} giáo án. Cô bấm vào từng ô để đọc lại và chỉnh.`);
   }
 
-  if (planError) return <div role="alert" className="rounded-the border border-vien bg-trang p-6"><h1 className="text-xl font-bold">Chưa mở được kế hoạch tuần</h1><p className="mt-3">{planError}</p><Link href="/thu-vien" className="mt-4 inline-flex min-h-11 items-center font-semibold text-bang">Quay lại thư viện</Link></div>;
+  const formTao = (cls: string) => (
+    <form key={profileReady ? "ready" : "loading"} onSubmit={taoTuan} className={cls}>
+          <Field label="Chủ đề">
+            <Input name="chuDe" value={chuDeNhap} onChange={(e) => setChuDeNhap(e.target.value)} placeholder="Ví dụ: Gia đình bé" required maxLength={100} disabled={!profileReady} />
+          </Field>
+          <Field label="Nhánh (không bắt buộc)">
+            <Input name="nhanh" placeholder="Ngôi nhà của bé" maxLength={100} disabled={!profileReady} />
+          </Field>
+          <Field label="Độ tuổi">
+            <Select name="doTuoi" options={Object.values(DO_TUOI_LABEL)} disabled={!profileReady} defaultValue={profile.capHoc === "mam-non" ? profile.doTuoi : DO_TUOI_LABEL[t.doTuoi]} />
+          </Field>
+          <Button type="submit" disabled={ban || !daNap || !profileReady || Boolean(planError)}>
+            {dangTaoTuan ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <WandSparkles size={17} aria-hidden="true" />}
+            {dangTaoTuan ? buoc === "luu" ? "Đang lưu…" : "Đang soạn…" : "Gợi ý kế hoạch 5 ngày"}
+          </Button>
+        </form>
+  );
 
-  return (
-    <>
-      <PageHeader
-        tinhNang="/ke-hoach-tuan"
-        title={`Chủ đề: ${t.chuDe}`}
-        lead={`${t.nhanh ? `Nhánh ${t.nhanh} · ` : ""}${DO_TUOI_LABEL[t.doTuoi]} · Tuần ${khoangNgay(t.tuNgay)}`}
-        actions={
-          <>
-            <Button onClick={soanCaTuan} disabled={ban || con === 0 || !daNap}>
-              {tienDo ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <WandSparkles size={17} aria-hidden="true" />}
-              {con === 0 ? "Đã soạn đủ 5 giáo án" : con === 5 ? "Soạn cả 5 giáo án" : `Soạn ${con} giáo án còn lại`}
-            </Button>
-            <ActionMenu label="Tùy chọn kế hoạch"><NutTaiFile loai="ke-hoach-tuan" data={t} tenFile={`Ke hoach tuan - ${t.chuDe}`} variant="nhe" nhan="Tải Word" /><NutTaiFile loai="ke-hoach-tuan" dinhDang="pdf" data={t} tenFile={`Ke hoach tuan - ${t.chuDe}`} variant="nhe" nhan="Tải PDF" /></ActionMenu>
-          </>
-        }
-      />
-
-      {/* Tiến độ và thông báo */}
+  const khoiThongBao = (
       <div aria-live="polite">
         {(dangTaoTuan || dangLuuLai) && !tienDo && <p className="mb-4 flex items-center gap-2 rounded-o bg-bang-nhat p-3 text-sm" role="status"><Loader2 size={17} className="animate-spin" />{buoc === "luu" ? "Đã có nội dung · Đang lưu kế hoạch…" : "Đang gợi ý kế hoạch tuần…"}</p>}
         {pendingSave && !dangLuuLai && <div className="mb-4 rounded-o border border-phan bg-phan-nhat p-4"><p className="text-sm font-semibold">Đã có nội dung nhưng chưa lưu đầy đủ vào thư viện.</p><p className="mt-1 text-sm text-muc-nhat">Cô giữ trang mở và thử lưu lại. Nội dung đã tạo sẽ được dùng lại, không gọi AI thêm lần nữa.</p><Button type="button" variant="phu" className="mt-3" onClick={thuLuuLai}>Thử lưu lại</Button></div>}
@@ -187,6 +198,61 @@ export function KeHoachTuanView() {
           </p>
         )}
       </div>
+  );
+
+  const GOI_Y_CHU_DE = ["Bản thân", "Gia đình", "Trường mầm non", "Nghề nghiệp", "Thế giới động vật", "Phương tiện giao thông"];
+
+  if (planError) return <div role="alert" className="rounded-the border border-vien bg-trang p-6"><h1 className="text-xl font-bold">Chưa mở được kế hoạch tuần</h1><p className="mt-3">{planError}</p><Link href="/thu-vien" className="mt-4 inline-flex min-h-11 items-center font-semibold text-bang">Quay lại thư viện</Link></div>;
+
+  // Chưa tải xong: không vẽ kế hoạch mẫu rồi mới đổi sang kế hoạch thật.
+  if (!daNap) return <p role="status" className="py-10 text-center text-muc-nhat">Đang mở kế hoạch tuần…</p>;
+
+  // Cô chưa có kế hoạch tuần nào: mời tạo bản đầu tiên, không hiện kế hoạch mẫu như thể là của cô.
+  if (!coKeHoach) {
+    return (
+      <>
+        <PageHeader
+          tinhNang="/ke-hoach-tuan"
+          title="Kế hoạch tuần"
+          lead="Nhập chủ đề đang dạy, AI gợi ý khung 5 ngày × 5 buổi cho lớp của cô. Cô xem lại và chỉnh trước khi soạn giáo án."
+        />
+        {khoiThongBao}{hopThoai}
+        <section className="rounded-the border border-vien bg-trang p-5 shadow-the sm:p-6" aria-label="Tạo kế hoạch tuần đầu tiên">
+          <h2 className="text-lg font-bold">Tạo kế hoạch tuần đầu tiên</h2>
+          <p className="mt-1 text-muc-nhat">Chưa biết chọn chủ đề nào? Bấm một gợi ý bên dưới, cô có thể sửa lại.</p>
+          <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Gợi ý chủ đề">
+            {GOI_Y_CHU_DE.map((g) => (
+              <button key={g} type="button" onClick={() => setChuDeNhap(g)} disabled={ban} className={`min-h-11 rounded-full border px-4 text-sm font-medium transition-colors ${chuDeNhap === g ? "border-bang bg-bang-nhat text-bang" : "border-vien bg-trang hover:border-muc-nhat"}`}>
+                {g}
+              </button>
+            ))}
+          </div>
+          {formTao("mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-end")}
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PageHeader
+        tinhNang="/ke-hoach-tuan"
+        title={`Chủ đề: ${t.chuDe}`}
+        lead={`${t.nhanh ? `Nhánh ${t.nhanh} · ` : ""}${DO_TUOI_LABEL[t.doTuoi]} · Tuần ${khoangNgay(t.tuNgay)}`}
+        actions={
+          <>
+            <Button onClick={soanCaTuan} disabled={ban || con === 0 || !daNap}>
+              {tienDo ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <WandSparkles size={17} aria-hidden="true" />}
+              {con === 0 ? "Đã soạn đủ 5 giáo án" : con === 5 ? "Soạn cả 5 giáo án" : `Soạn ${con} giáo án còn lại`}
+            </Button>
+            <NutTaiFile loai="ke-hoach-tuan" data={t} tenFile={`Ke hoach tuan - ${t.chuDe}`} variant="phu" nhan="Tải Word" />
+            <NutTaiFile loai="ke-hoach-tuan" dinhDang="pdf" data={t} tenFile={`Ke hoach tuan - ${t.chuDe}`} variant="phu" nhan="Tải PDF" />
+          </>
+        }
+      />
+
+      {/* Tiến độ và thông báo */}
+      {khoiThongBao}{hopThoai}
 
       <details className="group mb-8 rounded-the border border-vien bg-trang shadow-the">
         <summary className="cursor-pointer list-none flex items-center justify-between gap-3 px-5 py-4 font-semibold [&::-webkit-details-marker]:hidden">
@@ -199,21 +265,7 @@ export function KeHoachTuanView() {
           <ChevronDown size={18} className="text-muc-nhat transition-transform group-open:rotate-180" aria-hidden="true" />
         </summary>
         {planError && <p role="alert" className="px-5 pb-3 text-butdo">{planError}</p>}
-        <form key={profileReady ? "ready" : "loading"} onSubmit={taoTuan} className="grid gap-4 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-4 items-end">
-          <Field label="Chủ đề">
-            <Input name="chuDe" placeholder="Gia đình bé" required maxLength={100} disabled={!profileReady} />
-          </Field>
-          <Field label="Nhánh (không bắt buộc)">
-            <Input name="nhanh" placeholder="Ngôi nhà của bé" maxLength={100} disabled={!profileReady} />
-          </Field>
-          <Field label="Độ tuổi">
-            <Select name="doTuoi" options={Object.values(DO_TUOI_LABEL)} disabled={!profileReady} defaultValue={profile.capHoc === "mam-non" ? profile.doTuoi : DO_TUOI_LABEL[t.doTuoi]} />
-          </Field>
-          <Button type="submit" disabled={ban || !daNap || !profileReady || Boolean(planError)}>
-            {dangTaoTuan ? <Loader2 size={17} className="animate-spin" aria-hidden="true" /> : <WandSparkles size={17} aria-hidden="true" />}
-            {dangTaoTuan ? buoc === "luu" ? "Đang lưu…" : "Đang soạn…" : "Gợi ý kế hoạch 5 ngày"}
-          </Button>
-        </form>
+        {formTao("grid gap-4 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-4 items-end")}
       </details>
 
       <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-muc-nhat">
@@ -233,7 +285,7 @@ export function KeHoachTuanView() {
           <table className="w-full table-fixed border-collapse text-[14px]">
             <thead>
               <tr className="bg-giay">
-                <th className="w-[150px] p-3 text-left text-[12px] font-semibold uppercase tracking-wider text-muc-nhat">Buổi</th>
+                <th className="w-[150px] p-3 text-left text-[13px] font-semibold uppercase tracking-wider text-muc-nhat">Buổi</th>
                 {t.ngay.map((n) => (
                   <th key={n.thu} className="p-3 text-left font-bold border-l border-vien">{n.thu}</th>
                 ))}
@@ -281,7 +333,7 @@ export function KeHoachTuanView() {
                         <div className="flex gap-3 px-1 py-1.5">
                           <Icon size={16} className="mt-0.5 shrink-0 text-muc-nhat" aria-hidden="true" />
                           <div>
-                            <p className="text-[12px] font-semibold text-muc-nhat">{hd.buoi}</p>
+                            <p className="text-[13px] font-semibold text-muc-nhat">{hd.buoi}</p>
                             <p className="leading-snug">{hd.ten}</p>
                           </div>
                         </div>
@@ -304,21 +356,21 @@ function OHoc({ t, hd, dangSoan }: { t: KeHoachTuan; hd: HoatDongTrongNgay; dang
   return (
     <div className={`rounded-o border bg-trang p-3 ${hd.giaoAnId ? "border-phan" : lv ? lv.mau.vien : "border-vien"}`}>
       {lv && (
-        <span className={`inline-flex items-center gap-1 text-[11.5px] font-semibold px-1.5 py-0.5 rounded ${lv.mau.nen} ${lv.mau.chu}`}>
+        <span className={`inline-flex items-center gap-1 text-[13px] font-semibold px-2 py-0.5 rounded ${lv.mau.nen} ${lv.mau.chu}`}>
           <lv.icon size={12} aria-hidden="true" />
           {lv.ngan}
         </span>
       )}
       <p className="mt-1.5 font-semibold leading-snug">{hd.ten}</p>
       {dangSoan ? (
-        <span className="mt-2.5 inline-flex items-center gap-1 text-[12.5px] font-semibold text-muc-nhat">
+        <span className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-muc-nhat">
           <Loader2 size={13} className="animate-spin" aria-hidden="true" />
           Đang soạn…
         </span>
       ) : hd.giaoAnId ? (
         <Link
           href={hrefXemGiaoAn(hd.giaoAnId)}
-          className="mt-2.5 inline-flex items-center gap-1 text-[12.5px] font-semibold px-2 py-1 rounded-md bg-phan text-muc hover:brightness-95"
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-md bg-phan px-3 text-sm font-semibold text-muc hover:brightness-95"
         >
           <Check size={13} strokeWidth={3} aria-hidden="true" />
           Đã soạn, xem
@@ -326,7 +378,7 @@ function OHoc({ t, hd, dangSoan }: { t: KeHoachTuan; hd: HoatDongTrongNgay; dang
       ) : (
         <Link
           href={hrefSoanGiaoAn(t, hd)}
-          className="mt-2.5 inline-flex items-center gap-1 text-[12.5px] font-semibold px-2 py-1 rounded-md border border-bang/40 text-bang hover:bg-bang-nhat"
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-md border border-bang/40 px-3 text-sm font-semibold text-bang hover:bg-bang-nhat"
         >
           <WandSparkles size={13} aria-hidden="true" />
           Soạn giáo án

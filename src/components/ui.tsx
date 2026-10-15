@@ -47,12 +47,10 @@ export function Input(props: ComponentProps<"input">) {
   return <input className={INPUT} {...props} />;
 }
 
-export function Select({ options, ...props }: ComponentProps<"select"> & { options: string[] }) {
+export function Select({ options, ...props }: ComponentProps<"select"> & { options: (string | { value: string; label: string })[] }) {
   return (
     <select className={INPUT} {...props}>
-      {options.map((o) => (
-        <option key={o}>{o}</option>
-      ))}
+      {options.map((o) => typeof o === "string" ? <option key={o}>{o}</option> : <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );
 }
