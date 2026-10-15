@@ -9,7 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const metadata: Metadata = { title: "Đăng nhập" };
 
-// F1 — Đăng nhập bằng đường dẫn gửi qua email.
+// F1 — Gửi mã OTP qua email, nhập mã để tạo phiên đăng nhập.
 export default function DangNhap() {
   return (
     <div className="min-h-dvh grid lg:grid-cols-[1.05fr_1fr]">
@@ -41,7 +41,7 @@ export default function DangNhap() {
         <div className="flex-1 flex items-center">
           <div className="w-full max-w-[400px] mx-auto rounded-[20px] border border-vien bg-trang p-6 sm:p-8 shadow-noi my-8">
             <h1 className="text-[26px] font-bold tracking-tight">Đăng nhập</h1>
-            <p className="mt-1.5 text-muc-nhat">Nhập email để nhận đường dẫn đăng nhập. Cô không cần tạo mật khẩu.</p>
+            <p className="mt-1.5 text-muc-nhat">Nhận mã OTP qua email rồi nhập mã tại đây để đăng nhập.</p>
 
             <DangNhapForm configured={supabaseConfigured} allowDemo={demoAllowed()} />
 

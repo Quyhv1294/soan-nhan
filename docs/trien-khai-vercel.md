@@ -45,9 +45,10 @@ Sau khi có URL thật, ví dụ `https://soan-nhan-demo.vercel.app`:
 
 1. Trong Supabase **Authentication → URL Configuration**, đặt **Site URL** bằng URL production thật.
 2. Thêm **Redirect URL**: `https://<ten-du-an>.vercel.app/auth/callback` và `http://localhost:3000/auth/callback` nếu dùng máy cá nhân. Có thể cần mẫu `.../auth/callback**` cho callback có query `next` do app gửi; giới hạn theo đúng origin đang dùng.
-3. App chỉ đăng nhập bằng email: bật **Email provider** trong **Authentication → Sign In / Providers** và cho phép người dùng mới đăng ký nếu muốn khách mới dùng thử. Người dùng nhận magic link rồi mở trên cùng trình duyệt đã yêu cầu đăng nhập (PKCE).
-4. Để khách ngoài nhóm Supabase nhận magic link, cần cấu hình **Custom SMTP** với dịch vụ gửi email. SMTP mặc định chỉ phục vụ thử hạn chế, không dùng thay hệ thống gửi email cho khách công khai. Giữ mẫu email có đường dẫn xác nhận (`ConfirmationURL`) để người dùng bấm đăng nhập. Đăng nhập qua Google đã được gỡ khỏi giao diện và mã gọi OAuth; có thể tắt Google provider trong Supabase nếu không sử dụng ở nơi khác.
-5. Kiểm tra **Deployment Protection** của Vercel để URL production cho phép người ngoài mở. Không cần mở công khai các bản preview nếu không dùng.
+3. App đăng nhập bằng **mã OTP qua email**: bật **Email provider** trong **Authentication → Sign In / Providers** và cho phép người dùng mới đăng ký nếu muốn khách mới dùng thử. Người dùng nhập mã trên website, Supabase xác minh và lưu phiên đăng nhập.
+4. Trong **Authentication → Email Templates**, sửa **Magic Link / OTP** và **Confirm signup**: Subject `Mã đăng nhập Soạn Nhàn`, Body lấy từ `supabase/templates/email-otp.html`. Mẫu dùng `{{ .Token }}` để gửi mã số. Hướng dẫn đầy đủ: [Đăng nhập OTP](dang-nhap-email-otp.md). Cập nhật code trên Git/Vercel không tự thay mẫu email của dự án Supabase.
+5. Để khách ngoài nhóm Supabase nhận email, cần cấu hình **Custom SMTP** với dịch vụ gửi email. SMTP mặc định chỉ phục vụ thử hạn chế, không dùng thay hệ thống gửi email cho khách công khai. Có thể tắt Google provider trong Supabase nếu không sử dụng ở nơi khác.
+6. Kiểm tra **Deployment Protection** của Vercel để URL production cho phép người ngoài mở. Không cần mở công khai các bản preview nếu không dùng.
 
 ## 4. Sau khi deploy
 

@@ -178,7 +178,7 @@ export default function TrangChu() {
         <div className="bang-phan max-w-6xl mx-auto rounded-[24px] text-white px-6 sm:px-12 py-12 flex flex-wrap items-center justify-between gap-8 shadow-noi">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Tối nay soạn thử một chủ đề nhé cô.</h2>
-            <p className="mt-2 text-white/70">Nhập email và mở đường dẫn đăng nhập được gửi vào hộp thư.</p>
+            <p className="mt-2 text-white/70">Nhập email, nhận mã OTP và đăng nhập ngay trên website.</p>
           </div>
           <Link
             href="/dang-nhap?moi=1"

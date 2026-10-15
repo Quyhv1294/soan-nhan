@@ -12,7 +12,7 @@ npm run dev
 
 ## Cấu hình dịch vụ
 
-Sao chép `.env.example` thành `.env.local`. Điền `AI_API_KEY` để bật Gemini. Để bật đăng nhập và đồng bộ dữ liệu, điền `NEXT_PUBLIC_SUPABASE_URL` và `NEXT_PUBLIC_SUPABASE_ANON_KEY`, sau đó chạy `supabase/schema.sql` trong SQL Editor. App chỉ đăng nhập bằng đường dẫn qua email (magic link), không yêu cầu mật khẩu. Trong Supabase Auth, bật Email provider, cấu hình SMTP cho người dùng bên ngoài và thêm URL callback `{origin}/auth/callback` vào danh sách redirect được phép. Giữ `FREE_GENERATIONS_PER_MONTH` và `NEXT_PUBLIC_FREE_GENERATIONS_PER_MONTH` cùng giá trị để quota phía máy chủ và giao diện khớp nhau.
+Sao chép `.env.example` thành `.env.local`. Điền `AI_API_KEY` để bật Gemini. Để bật đăng nhập và đồng bộ dữ liệu, điền `NEXT_PUBLIC_SUPABASE_URL` và `NEXT_PUBLIC_SUPABASE_ANON_KEY`, sau đó chạy `supabase/schema.sql` trong SQL Editor. App đăng nhập bằng **mã OTP gửi qua email**: yêu cầu mã, nhập mã trên website, xác minh bằng Supabase rồi vào trang làm việc. Trong Supabase Auth, bật Email provider, cấu hình SMTP cho người dùng bên ngoài và áp dụng mẫu `supabase/templates/email-otp.html` có `{{ .Token }}` cho **Magic Link / OTP** và **Confirm signup**. Chi tiết: [docs/dang-nhap-email-otp.md](docs/dang-nhap-email-otp.md). Giữ `FREE_GENERATIONS_PER_MONTH` và `NEXT_PUBLIC_FREE_GENERATIONS_PER_MONTH` cùng giá trị để quota phía máy chủ và giao diện khớp nhau.
 
 Khi thiếu Supabase trong môi trường phát triển, app cho phép xem demo và lưu bản demo trong trình duyệt. Môi trường production yêu cầu cấu hình Supabase và không cho truy cập API khi chưa đăng nhập.
 
@@ -112,7 +112,7 @@ Kiểm tra trình duyệt dùng hồ sơ riêng và giả lập API AI/lưu tài
 | Đường dẫn | Màn hình | Tính năng |
 | --- | --- | --- |
 | `/` | Trang giới thiệu | — |
-| `/dang-nhap` | Đăng nhập bằng đường dẫn gửi qua email | F1 |
+| `/dang-nhap` | Gửi và xác minh mã OTP qua email | F1 |
 | `/bat-dau` | Hồ sơ lớp (cấp học, độ tuổi, bộ sách) | F1 |
 | `/tong-quan` | Việc của tuần này | — |
 | `/ke-hoach-thang` | Bảng tháng, chỉnh tuần/ngày, MT, giáo án, Word/PDF theo mẫu | — |
@@ -135,7 +135,7 @@ src/
     page.tsx                 trang giới thiệu
     dang-nhap/, bat-dau/     đăng nhập, hồ sơ lớp
     (app)/                   các trang sau đăng nhập, dùng chung AppShell
-    auth/callback/           đổi mã OAuth/magic link thành phiên đăng nhập
+    auth/callback/           xử lý callback xác thực của các đường dẫn đã gửi trước đây
     api/                      API tạo nội dung, hồ sơ và thư viện; kiểm tra phiên đăng nhập
   lib/supabase/               client trình duyệt, server và truy vấn dữ liệu
   components/
