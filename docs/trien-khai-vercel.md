@@ -45,13 +45,13 @@ Sau khi có URL thật, ví dụ `https://soan-nhan-demo.vercel.app`:
 
 1. Trong Supabase **Authentication → URL Configuration**, đặt **Site URL** bằng URL production thật.
 2. Thêm **Redirect URL**: `https://<ten-du-an>.vercel.app/auth/callback` và `http://localhost:3000/auth/callback` nếu dùng máy cá nhân. Có thể cần mẫu `.../auth/callback**` cho callback có query `next` do app gửi; giới hạn theo đúng origin đang dùng.
-3. Đăng nhập Google: bật **Google provider** trong Supabase; tạo OAuth client Web trong Google Cloud, nhập Client ID và Client Secret trực tiếp vào Supabase. Authorized redirect URI của Google là callback **Supabase cung cấp** (`https://<project-ref>.supabase.co/auth/v1/callback`), không phải callback app. Nếu OAuth consent còn ở chế độ Testing, thêm email những người dùng thử vào danh sách Test users.
-4. Đăng nhập email: để khách ngoài nhóm Supabase nhận magic link, cần cấu hình **Custom SMTP** với dịch vụ gửi email. SMTP mặc định chỉ phục vụ thử hạn chế, không dùng thay hệ thống gửi email cho khách công khai.
+3. App chỉ đăng nhập bằng email: bật **Email provider** trong **Authentication → Sign In / Providers** và cho phép người dùng mới đăng ký nếu muốn khách mới dùng thử. Người dùng nhận magic link rồi mở trên cùng trình duyệt đã yêu cầu đăng nhập (PKCE).
+4. Để khách ngoài nhóm Supabase nhận magic link, cần cấu hình **Custom SMTP** với dịch vụ gửi email. SMTP mặc định chỉ phục vụ thử hạn chế, không dùng thay hệ thống gửi email cho khách công khai. Giữ mẫu email có đường dẫn xác nhận (`ConfirmationURL`) để người dùng bấm đăng nhập. Đăng nhập qua Google đã được gỡ khỏi giao diện và mã gọi OAuth; có thể tắt Google provider trong Supabase nếu không sử dụng ở nơi khác.
 5. Kiểm tra **Deployment Protection** của Vercel để URL production cho phép người ngoài mở. Không cần mở công khai các bản preview nếu không dùng.
 
 ## 4. Sau khi deploy
 
-Các thao tác nên kiểm tra bằng một tài khoản khách: đăng nhập → lưu hồ sơ → tạo bằng AI → lưu/mở lại thư viện → tải Word/PDF → đăng xuất. Phiên làm việc và kiểm tra trên máy cá nhân không xác nhận được cấu hình Supabase/OAuth/SMTP hoặc Chromium ở Vercel.
+Các thao tác nên kiểm tra bằng một tài khoản khách: đăng nhập → lưu hồ sơ → tạo bằng AI → lưu/mở lại thư viện → tải Word/PDF → đăng xuất. Phiên làm việc và kiểm tra trên máy cá nhân không xác nhận được cấu hình Supabase/SMTP hoặc Chromium ở Vercel.
 
 Mã nguồn đã có lệnh kiểm tra kiểu và quét mẫu khóa trong nội dung sắp commit:
 
@@ -71,7 +71,7 @@ Vercel tự nhận các lần push tiếp theo trên nhánh production đã ch�
 
 - [Vercel Hobby](https://vercel.com/docs/plans/hobby)
 - [Vercel và Git](https://vercel.com/docs/git)
-- [Supabase Google Auth](https://supabase.com/docs/guides/auth/social-login/auth-google)
+- [Supabase đăng nhập email không mật khẩu](https://supabase.com/docs/guides/auth/auth-email-passwordless)
 - [Supabase Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
 - [Supabase SMTP](https://supabase.com/docs/guides/auth/auth-smtp)
 - [Chromium cho serverless](https://github.com/Sparticuz/chromium)
